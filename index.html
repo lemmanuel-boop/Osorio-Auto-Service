@@ -429,9 +429,9 @@ function loadConfigFromSheet(cb){
     var script=document.createElement("script");
     window._cfgCB=function(data){
       try{
-        if(data&&data.hours)C.hours=data.hours;
-        if(data&&data.services)C.services=data.services;
-        if(data&&data.adv!==undefined)C.adv=data.adv;
+        if(data&&data.hours&&data.hours.length>0)C.hours=data.hours;
+        if(data&&data.services&&data.services.length>0)C.services=data.services;
+        if(data&&data.adv!==undefined&&data.adv!==null)C.adv=data.adv;
         save();
       }catch(e){}
       if(cb)cb();
