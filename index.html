@@ -196,7 +196,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;fo
 
   <div id="tHoras" class="card" style="display:none">
     <h2>Horarios disponibles</h2>
-    <p class="note">Toca para activar o desactivar.</p>
+    <p class="note">Toca para activar o desactivar. Sabados automaticamente se cortan a las 12:00 PM. Domingos no disponibles.</p>
     <div class="hg" id="horaBtns"></div>
     <div class="divl"></div>
     <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:7px">Agregar hora personalizada</p>
@@ -277,7 +277,7 @@ var SHEET = "https://script.google.com/macros/s/AKfycbxfyz6F07mDpf2kYEDCD6G3qqoC
 var C = {
   name:"Osorio Auto Service", pin:"1234",
   msg:"Su cita ha sido confirmada. Te esperamos puntual.",
-  hours:["09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","14:00","14:30","15:00","15:30","16:00","17:00","17:30","18:00"],
+  hours:["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"],
   services:[
     {n:"Cambio de aceite y filtro",d:30},
     {n:"Diagnostico",d:60},
@@ -370,9 +370,14 @@ function freeH(f,dur){
     var ad=getSvcDur(a.service);
     blocked.push({s:a.hour,e:addMins(a.hour,ad)});
   }
+  var fp3=f.split("-");
+  var fdow3=new Date(parseInt(fp3[0]),parseInt(fp3[1])-1,parseInt(fp3[2])).getDay();
+  var isSat=(fdow3===6);
   return C.hours.filter(function(h){
     if(bh.indexOf(h)>=0)return false;
     if(!hourOk(f,h))return false;
+    // Saturdays only until 12pm
+    if(isSat&&h>="12:00")return false;
     var slotEnd=addMins(h,d);
     for(var i=0;i<blocked.length;i++){
       if(h<blocked[i].e&&slotEnd>blocked[i].s)return false;
@@ -484,7 +489,10 @@ function renderCal(idx){
     var cls="d";
     if(isSel)cls+=" sel";
     else if(isT)cls+=" tod";
-    if(!idx&&(past||blk||noH))cls+=" off";
+    var fp2=f.split("-");
+    var fdow=new Date(parseInt(fp2[0]),parseInt(fp2[1])-1,parseInt(fp2[2])).getDay();
+    var isSun=(fdow===0);
+    if(!idx&&(past||blk||noH||isSun))cls+=" off";
     if(idx&&blk)cls+=" blkd";
     var sub=blk&&!isSel?"<span style='font-size:7px;display:block;color:"+(idx?"#c00":"#e74c3c")+"'>cerrado</span>":dot;
     h+="<div class='"+cls+"' onclick='pickD(\""+f+"\","+idx+")'>"+d+sub+"</div>";
@@ -499,6 +507,14 @@ function pickD(f,idx){
     document.getElementById("dCard").style.display="none";
     selD=null; selH="";
     if(f<td())return;
+    // Block sundays
+    var fp=f.split("-");
+    var dow=new Date(parseInt(fp[0]),parseInt(fp[1])-1,parseInt(fp[2])).getDay();
+    if(dow===0){
+      document.getElementById("blkMsg").textContent="No trabajamos los domingos.";
+      document.getElementById("blkAlert").style.display="block";
+      renderCal(0);return;
+    }
     var bi=getBlkInfo(f);
     if(bi){
       document.getElementById("blkMsg").textContent=bi.msg||"No hay citas disponibles este dia.";
@@ -912,7 +928,7 @@ function renderGraf(){
 function renderHoras(){
   var el=document.getElementById("horaBtns");
   if(!el)return;
-  var ALL=["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00"];
+  var ALL=["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00"];
   var merged=ALL.slice();
   for(var i=0;i<C.hours.length;i++){if(merged.indexOf(C.hours[i])<0)merged.push(C.hours[i]);}
   merged.sort();
