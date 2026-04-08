@@ -406,12 +406,41 @@ function load(){
     var c=localStorage.getItem("oas_c");
     if(c){
       var o=JSON.parse(c);
-      var keys=["blkDates","blkRanges","blkHours","services","adv","pin","name","msg"];
+      // Load ALL settings including hours so admin changes reflect to clients
+      var keys=["blkDates","blkRanges","blkHours","hours","services","adv","pin","name","msg"];
       for(var i=0;i<keys.length;i++){if(o[keys[i]]!==undefined)C[keys[i]]=o[keys[i]];}
-      // Always use default hours from code, not localStorage
-      // This ensures schedule changes take effect immediately
     }
   }catch(e){}
+}
+
+// Save/Load config from Google Sheet
+function saveConfigToSheet(){
+  try{
+    var url=SHEET+"?action=saveConfig"
+      +"&hours="+encodeURIComponent(JSON.stringify(C.hours))
+      +"&services="+encodeURIComponent(JSON.stringify(C.services))
+      +"&adv="+encodeURIComponent(C.adv);
+    var img=new Image();
+    img.src=url;
+  }catch(e){}
+}
+function loadConfigFromSheet(cb){
+  try{
+    var script=document.createElement("script");
+    window._cfgCB=function(data){
+      try{
+        if(data&&data.hours)C.hours=data.hours;
+        if(data&&data.services)C.services=data.services;
+        if(data&&data.adv!==undefined)C.adv=data.adv;
+        save();
+      }catch(e){}
+      if(cb)cb();
+      try{document.body.removeChild(script);}catch(e){}
+    };
+    script.src=SHEET+"?action=getConfig&callback=_cfgCB";
+    document.body.appendChild(script);
+    setTimeout(function(){if(cb)cb();},4000);
+  }catch(e){if(cb)cb();}
 }
 
 // Google Sheet
@@ -948,11 +977,11 @@ function togH(h){
   var i=C.hours.indexOf(h);
   if(i>=0)C.hours.splice(i,1);
   else{C.hours.push(h);C.hours.sort();}
-  save(); renderHoras();
+  save(); saveConfigToSheet(); renderHoras();
 }
 function addHora(){
   var v=document.getElementById("newHIn").value;
-  if(v&&C.hours.indexOf(v)<0){C.hours.push(v);C.hours.sort();save();renderHoras();}
+  if(v&&C.hours.indexOf(v)<0){C.hours.push(v);C.hours.sort();save();saveConfigToSheet();renderHoras();}
 }
 
 // Blocked dates
@@ -1022,7 +1051,7 @@ function updSvDur(i,val){
   var d=parseInt(val)||60;
   if(typeof C.services[i]==="object")C.services[i].d=d;
   else C.services[i]={n:C.services[i],d:d};
-  save(); buildSvc();
+  save(); saveConfigToSheet(); buildSvc();
 }
 function addSv(){
   var v=document.getElementById("newSvIn").value.trim();
@@ -1033,9 +1062,9 @@ function addSv(){
     var nm=typeof C.services[i]==="object"?C.services[i].n:C.services[i];
     if(nm===v){exists=true;break;}
   }
-  if(!exists){C.services.push({n:v,d:d});document.getElementById("newSvIn").value="";save();renderSvs();buildSvc();}
+  if(!exists){C.services.push({n:v,d:d});document.getElementById("newSvIn").value="";save();saveConfigToSheet();renderSvs();buildSvc();}
 }
-function delSv(i){C.services.splice(i,1);save();renderSvs();buildSvc();}
+function delSv(i){C.services.splice(i,1);save();saveConfigToSheet();renderSvs();buildSvc();}
 
 // Config
 function saveCfg(){
@@ -1122,9 +1151,12 @@ function loadFromSheet(cb){
 
 // INIT
 load();
-renderCal(0);
-buildSvc();
-checkRemind();
+// Load latest config from sheet (hours, services) so admin changes reflect to all clients
+loadConfigFromSheet(function(){
+  renderCal(0);
+  buildSvc();
+  checkRemind();
+});
 </script>
 </body>
 </html>
