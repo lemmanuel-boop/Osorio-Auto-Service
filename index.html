@@ -277,7 +277,7 @@ var SHEET = "https://script.google.com/macros/s/AKfycbxfyz6F07mDpf2kYEDCD6G3qqoC
 var C = {
   name:"Osorio Auto Service", pin:"1234",
   msg:"Su cita ha sido confirmada. Te esperamos puntual.",
-  hours:["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"],
+  hours:["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00"],
   services:[
     {n:"Cambio de aceite y filtro",d:30},
     {n:"Diagnostico",d:60},
@@ -404,8 +404,10 @@ function load(){
     var c=localStorage.getItem("oas_c");
     if(c){
       var o=JSON.parse(c);
-      var keys=["blkDates","blkRanges","blkHours","hours","services","adv","pin","name","msg"];
+      var keys=["blkDates","blkRanges","blkHours","services","adv","pin","name","msg"];
       for(var i=0;i<keys.length;i++){if(o[keys[i]]!==undefined)C[keys[i]]=o[keys[i]];}
+      // Always use default hours from code, not localStorage
+      // This ensures schedule changes take effect immediately
     }
   }catch(e){}
 }
