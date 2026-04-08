@@ -160,7 +160,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;fo
     <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">Link para tus clientes:</p>
     <p class="note">Comparte este link. Funciona en iPhone y Android.</p>
     <div class="surl" id="sUrl">-</div>
+    <p id="sheetStatus" style="font-size:12px;color:#888;margin-top:4px;text-align:center"></p>
     <button class="btn" id="cpBtn" onclick="cpLink()" style="margin-top:8px">Copiar link</button>
+    <button class="btn" onclick="loadFromSheet(function(){renderCal(1);updDay();renderAllA();})" style="margin-top:6px;background:#2980b9">&#8635; Actualizar citas desde Sheet</button>
   </div>
   <div class="tabs">
     <button class="tab on" onclick="setTab('tCal',this)">Calendario</button>
@@ -450,7 +452,7 @@ function goPage(id){
   document.getElementById(id).style.display="block";
   window.scrollTo(0,0);
   if(id==="pgC"){renderCal(0);buildSvc();checkRemind();}
-  if(id==="pgA"){document.getElementById("sUrl").textContent=window.location.href;renderCal(1);updDay();}
+  if(id==="pgA"){document.getElementById("sUrl").textContent=window.location.href;loadFromSheet(function(){renderCal(1);updDay();});}
 }
 
 // Calendar
@@ -1032,6 +1034,55 @@ function cpLink(){
     btn.textContent="Copiado!";
     setTimeout(function(){btn.textContent="Copiar link";},2500);
   }
+}
+
+// Load appointments from Google Sheet
+function loadFromSheet(cb){
+  var el=document.getElementById("sheetStatus");
+  if(el)el.textContent="Cargando citas...";
+  try{
+    var script=document.createElement("script");
+    window._sheetCB=function(data){
+      try{
+        if(data&&data.rows){
+          // Reset and rebuild APPTS from sheet data
+          APPTS={};
+          for(var i=0;i<data.rows.length;i++){
+            var row=data.rows[i];
+            var date=row[0]||"";
+            var hour=row[1]||"";
+            var name=row[2]||"";
+            var tel=row[3]||"";
+            var service=row[4]||"";
+            var vehiculo=(row[5]||"").split(" ");
+            var nota=row[6]||"";
+            var code=row[7]||"";
+            if(!date||!hour||!name)continue;
+            if(!APPTS[date])APPTS[date]=[];
+            // avoid duplicates
+            var dup=false;
+            for(var j=0;j<APPTS[date].length;j++){if(APPTS[date][j].code===code){dup=true;break;}}
+            if(!dup){
+              APPTS[date].push({
+                id:parseInt(code.replace(/[^0-9]/g,""))||Date.now(),
+                name:name,tel:tel,service:service,
+                marca:vehiculo[0]||"",modelo:vehiculo.slice(1).join(" ")||"",
+                note:nota,hour:hour,code:code
+              });
+            }
+          }
+          save();
+        }
+        if(el)el.textContent="";
+      }catch(e){if(el)el.textContent="Error cargando citas";}
+      if(cb)cb();
+      document.body.removeChild(script);
+    };
+    script.src="https://script.google.com/macros/s/AKfycbxfyz6F07mDpf2kYEDCD6G3qqoC5YLTIRi3kA0Ck4E89u0hUbDhDTqpxmyIQgHHCJJVJA/exec?action=getAll&callback=_sheetCB";
+    document.body.appendChild(script);
+    // Timeout fallback
+    setTimeout(function(){if(cb)cb();},5000);
+  }catch(e){if(cb)cb();}
 }
 
 // INIT
