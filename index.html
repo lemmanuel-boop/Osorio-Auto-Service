@@ -356,9 +356,8 @@ function getSelDur(){
   try{
     var s=document.getElementById("fSvc");
     if(!s||!s.value||s.selectedIndex<0)return 60;
-    var opt=s.options[s.selectedIndex];
-    if(!opt)return 60;
-    return parseInt(opt.getAttribute("data-dur"))||60;
+    var svcName=s.value;
+    return getSvcDur(svcName);
   }catch(e){return 60;}
 }
 function freeH(f,dur){
@@ -677,10 +676,21 @@ function srch(){
 function cancelAppt(date,id){
   if(!confirm("Seguro que quieres cancelar esta cita?"))return;
   if(!APPTS[date])return;
+  // Find the code before removing
+  var code="";
+  for(var i=0;i<APPTS[date].length;i++){if(APPTS[date][i].id===id){code=APPTS[date][i].code;break;}}
+  // Remove locally
   var nl=[];
   for(var i=0;i<APPTS[date].length;i++){if(APPTS[date][i].id!==id)nl.push(APPTS[date][i]);}
   APPTS[date]=nl;
   save(); checkRemind(); renderCal(0);
+  // Delete from Google Sheet
+  if(code){
+    try{
+      var img=new Image();
+      img.src=SHEET+"?action=delete&codigo="+encodeURIComponent(code);
+    }catch(e){}
+  }
   document.getElementById("srchRes").innerHTML="<div style='background:#f0fff4;border:1.5px solid #74c69d;border-radius:10px;padding:14px;text-align:center'><b style='color:#2d6a4f'>Cita cancelada exitosamente.</b></div>";
   document.getElementById("srchIn").value="";
 }
@@ -766,10 +776,15 @@ function toggleBlkH(h){
 }
 function delA(date,id){
   if(!APPTS[date])return;
+  var code="";
+  for(var i=0;i<APPTS[date].length;i++){if(APPTS[date][i].id===id){code=APPTS[date][i].code;break;}}
   var nl=[];
   for(var i=0;i<APPTS[date].length;i++){if(APPTS[date][i].id!==id)nl.push(APPTS[date][i]);}
   APPTS[date]=nl;
   save(); updDay(); renderAllA();
+  if(code){
+    try{var img=new Image();img.src=SHEET+"?action=delete&codigo="+encodeURIComponent(code);}catch(e){}
+  }
 }
 
 // All appointments
