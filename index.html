@@ -277,7 +277,7 @@ var SHEET = "https://script.google.com/macros/s/AKfycbxfyz6F07mDpf2kYEDCD6G3qqoC
 var C = {
   name:"Osorio Auto Service", pin:"1234",
   msg:"Su cita ha sido confirmada. Te esperamos puntual.",
-  hours:["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00"],
+  hours:["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"],
   services:[
     {n:"Cambio de aceite y filtro",d:30},
     {n:"Diagnostico",d:60},
@@ -378,6 +378,8 @@ function freeH(f,dur){
     if(!hourOk(f,h))return false;
     // Saturdays only until 12pm
     if(isSat&&h>="12:00")return false;
+    // Weekdays max 3:30pm (15:30)
+    if(!isSat&&h>"15:30")return false;
     var slotEnd=addMins(h,d);
     for(var i=0;i<blocked.length;i++){
       if(h<blocked[i].e&&slotEnd>blocked[i].s)return false;
@@ -930,7 +932,7 @@ function renderGraf(){
 function renderHoras(){
   var el=document.getElementById("horaBtns");
   if(!el)return;
-  var ALL=["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00"];
+  var ALL=["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"];
   var merged=ALL.slice();
   for(var i=0;i<C.hours.length;i++){if(merged.indexOf(C.hours[i])<0)merged.push(C.hours[i]);}
   merged.sort();
