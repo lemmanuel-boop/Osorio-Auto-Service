@@ -289,11 +289,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;fo
   <div id="tHoras" class="card" style="display:none">
     <h2>🕐 Horarios disponibles</h2>
     <div class="lunch-info">
-      <b>🗓️ Horario de trabajo:</b><br>
-      Lun-Vie: 7:00 AM - 3:30 PM<br>
-      Almuerzo Lun-Vie: 11:00 AM - 12:00 PM (bloqueado)<br>
-      Sabado: 7:00 AM - 11:30 AM<br>
-      Domingo: Cerrado
+      <b>🍱 Almuerzo bloqueado automaticamente:</b><br>
+      Lun-Vie: 11:00 AM - 12:00 PM<br>
+      Sabado: 12:00 PM - 1:00 PM
     </div>
     <p class="note">Toca para activar o desactivar horarios.</p>
     <div class="hg" id="horaBtns"></div>
@@ -488,34 +486,22 @@ function getBlkInfo(f) {
 
 function isBlk(f) { return getBlkInfo(f) !== null; }
 
-function getDow(date) {
+// Lunch break: Mon-Fri 11:00-12:00, Sat 12:00-13:00
+function isLunch(date, hour) {
   var p = date.split("-");
-  return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])).getDay();
-  // 0=Dom, 1=Lun, 2=Mar, 3=Mie, 4=Jue, 5=Vie, 6=Sab
+  var dow = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])).getDay();
+  if (dow >= 1 && dow <= 5) return (hour === "11:00" || hour === "11:30");
+  if (dow === 6) return (hour === "12:00" || hour === "12:30");
+  return false;
 }
 
 function hourOk(date, hour) {
-  var dow = getDow(date);
-
-  // Domingo siempre bloqueado
-  if (dow === 0) return false;
-
-  // Lunes a Viernes: 7:00am - 3:30pm, almuerzo 11:00-11:30 bloqueado
-  if (dow >= 1 && dow <= 5) {
-    if (hour < "07:00" || hour > "15:30") return false;
-    if (hour === "11:00" || hour === "11:30") return false; // almuerzo
-  }
-
-  // Sabado: 7:00am - 11:30am solamente
-  if (dow === 6) {
-    if (hour < "07:00" || hour > "11:30") return false;
-  }
-
-  // Bloqueo manual de horas
+  // Block lunch
+  if (isLunch(date, hour)) return false;
+  // Block manually
   var bh = C.blkHours[date] || [];
   if (bh.indexOf(hour) >= 0) return false;
-
-  // Anticipacion (mismo dia)
+  // Advance time check (same day only)
   if (!C.adv) return true;
   var t = td();
   if (date > t) return true;
@@ -548,51 +534,97 @@ function freeH(date, selDur) {
 }
 
 // ═══════════════════════════════════════════════════════
-// PERSIST
+// GOOGLE SHEETS - BASE DE DATOS CENTRAL
 // ═══════════════════════════════════════════════════════
-function save() {
-  try {
-    localStorage.setItem("oas_a", JSON.stringify(APPTS));
-    localStorage.setItem("oas_c", JSON.stringify({
-      blkDates: C.blkDates, blkRanges: C.blkRanges, blkHours: C.blkHours,
-      hours: C.hours, services: C.services, adv: C.adv,
-      pin: C.pin, name: C.name, msg: C.msg
-    }));
-  } catch(e) {}
+var LOADING = false;
+
+function api(params, cb) {
+  var url = SHEET_URL + "?" + params;
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if(cb) cb(d); })
+    .catch(function(){ if(cb) cb({ok:false}); });
 }
 
-function load() {
-  try {
-    var a = localStorage.getItem("oas_a");
-    if (a) APPTS = JSON.parse(a);
-    var c = localStorage.getItem("oas_c");
-    if (c) {
-      var o = JSON.parse(c);
-      var keys = ["blkDates","blkRanges","blkHours","hours","services","adv","pin","name","msg"];
-      for (var i = 0; i < keys.length; i++) {
-        if (o[keys[i]] !== undefined) C[keys[i]] = o[keys[i]];
+function loadAll(cb) {
+  showLoading(true);
+  fetch(SHEET_URL + "?action=getAll")
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      showLoading(false);
+      if (!d.ok) { if(cb) cb(); return; }
+      APPTS = d.appts || {};
+      C.blkDates  = d.blockedDates  || [];
+      C.blkHours  = d.blockedHours  || {};
+      // Config from sheet
+      if (d.config) {
+        if (d.config.pin)  C.pin  = d.config.pin;
+        if (d.config.msg)  C.msg  = d.config.msg;
+        if (d.config.name) C.name = d.config.name;
+        if (d.config.adv)  C.adv  = parseInt(d.config.adv) || 2;
+        if (d.config.services) { try { C.services = JSON.parse(d.config.services); } catch(e){} }
+        if (d.config.hours)    { try { C.hours = JSON.parse(d.config.hours); } catch(e){} }
       }
-    }
-  } catch(e) {}
+      if(cb) cb();
+    })
+    .catch(function(){
+      showLoading(false);
+      if(cb) cb();
+    });
 }
 
-// ═══════════════════════════════════════════════════════
-// GOOGLE SHEETS
-// ═══════════════════════════════════════════════════════
+function showLoading(show) {
+  var el = document.getElementById("loadingBar");
+  if (el) el.style.display = show ? "block" : "none";
+}
+
+// Save config value to sheet
+function saveConfigVal(key, val) {
+  api("action=saveConfig&key=" + encodeURIComponent(key) + "&val=" + encodeURIComponent(val));
+}
+
+function save() {
+  // Save config to sheet so all clients see changes
+  saveConfigVal("adv",      String(C.adv));
+  saveConfigVal("name",     C.name);
+  saveConfigVal("msg",      C.msg);
+  saveConfigVal("pin",      C.pin);
+  saveConfigVal("services", JSON.stringify(C.services));
+  saveConfigVal("hours",    JSON.stringify(C.hours));
+}
+
 function saveToSheet(appt, date) {
-  try {
-    var veh = [appt.marca, appt.modelo].filter(function(x){return x;}).join(" ");
-    var params = "fecha="     + encodeURIComponent(date)
-               + "&hora="     + encodeURIComponent(appt.hour)
-               + "&nombre="   + encodeURIComponent(appt.name)
-               + "&telefono=" + encodeURIComponent(appt.tel)
-               + "&servicio=" + encodeURIComponent(appt.service || "")
-               + "&vehiculo=" + encodeURIComponent(veh)
-               + "&nota="     + encodeURIComponent(appt.note || "")
-               + "&codigo="   + encodeURIComponent(appt.code);
-    var img = new Image();
-    img.src = SHEET_URL + "?" + params;
-  } catch(e) {}
+  var veh = [appt.marca, appt.modelo].filter(function(x){return x;}).join(" ");
+  api("action=bookAppt"
+    + "&fecha="    + encodeURIComponent(date)
+    + "&hora="     + encodeURIComponent(appt.hour)
+    + "&nombre="   + encodeURIComponent(appt.name)
+    + "&telefono=" + encodeURIComponent(appt.tel)
+    + "&servicio=" + encodeURIComponent(appt.service||"")
+    + "&vehiculo=" + encodeURIComponent(veh)
+    + "&nota="     + encodeURIComponent(appt.note||"")
+    + "&codigo="   + encodeURIComponent(appt.code)
+  );
+}
+
+function cancelToSheet(code, cb) {
+  api("action=cancelAppt&codigo=" + encodeURIComponent(code), cb);
+}
+
+function blkDateToSheet(fecha, msg) {
+  api("action=blkDate&fecha=" + encodeURIComponent(fecha) + "&msg=" + encodeURIComponent(msg));
+}
+
+function unblkDateToSheet(fecha) {
+  api("action=unblkDate&fecha=" + encodeURIComponent(fecha));
+}
+
+function blkHourToSheet(fecha, hora) {
+  api("action=blkHour&fecha=" + encodeURIComponent(fecha) + "&hora=" + encodeURIComponent(hora));
+}
+
+function unblkHourToSheet(fecha, hora) {
+  api("action=unblkHour&fecha=" + encodeURIComponent(fecha) + "&hora=" + encodeURIComponent(hora));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -604,8 +636,17 @@ function goPage(id) {
   document.getElementById("pgA").style.display = "none";
   document.getElementById(id).style.display = "block";
   window.scrollTo(0, 0);
-  if (id === "pgC") { renderCal(0); buildSvc(); checkRemind(); }
-  if (id === "pgA") { document.getElementById("sUrl").textContent = window.location.href; renderCal(1); updDay(); }
+  // Always reload fresh data from Google Sheets when switching pages
+  loadAll(function() {
+    buildSvc();
+    if (id === "pgC") { renderCal(0); checkRemind(); }
+    if (id === "pgA") {
+      document.getElementById("sUrl").textContent = window.location.href;
+      renderCal(1); updDay();
+      var advSel = document.getElementById("advSel");
+      if (advSel) advSel.value = String(C.adv);
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -632,9 +673,6 @@ function renderCal(idx) {
     var f    = fk(yr, mo, d);
     var past = f < td();
     var blk  = isBlk(f);
-    // Block Sundays for clients
-    var dow  = new Date(parseInt(yr), mo, d).getDay();
-    var isSunday = (dow === 0);
     var sd2  = idx ? adminD : selD;
     var isSel = sd2 === f;
     var isT   = f === td();
@@ -642,7 +680,7 @@ function renderCal(idx) {
     var dot   = (n > 0 && idx) ? "<span class='dot'></span>" : "";
     var cls   = "d"
       + (isSel ? " sel" : isT ? " tod" : "")
-      + (!idx && (past || blk || isSunday) ? " off" : "")
+      + (!idx && (past || blk) ? " off" : "")
       + (idx && blk ? " blkd" : "");
     var sub = blk && !isSel
       ? "<span style='font-size:7px;display:block;color:" + (idx ? "#c00" : "#e74c3c") + "'>cerrado</span>"
@@ -662,10 +700,6 @@ function pickD(f, idx) {
     selD = null; selH = "";
     if (f < td()) return;
     var bi = getBlkInfo(f);
-    // Also block Sundays
-    var pp2 = f.split("-");
-    var dow2 = new Date(parseInt(pp2[0]), parseInt(pp2[1])-1, parseInt(pp2[2])).getDay();
-    if (dow2 === 0) return;
     if (bi) {
       document.getElementById("blkMsg2").textContent = bi.msg || "No hay citas disponibles este dia.";
       document.getElementById("blkAlert").style.display = "block";
@@ -873,24 +907,22 @@ function srch() {
     if (veh)       h += "<span style='font-size:12px;color:#555'>Auto: " + veh + "</span><br>";
     h += "<span style='font-size:11px;color:#aaa'>Codigo: " + a.code + "</span>";
     h += "</div>";
-    if (!past) h += "<button class='btn sm red' style='flex-shrink:0' onclick='cancelAppt(\"" + dt + "\"," + a.id + ")'>Cancelar</button>";
+    if (!past) h += "<button class='btn sm red' style='flex-shrink:0' onclick='cancelAppt(\"" + dt + "\",\"" + a.code + "\")'>Cancelar</button>";
     else       h += "<span style='font-size:11px;color:#bbb;padding-top:4px'>Pasada</span>";
     h += "</div></div>";
   }
   res.innerHTML = h;
 }
 
-function cancelAppt(date, id) {
+function cancelAppt(date, code) {
   if (!confirm("Seguro que quieres cancelar esta cita?")) return;
-  if (!APPTS[date]) return;
-  var newL = [];
-  for (var i = 0; i < APPTS[date].length; i++) {
-    if (APPTS[date][i].id !== id) newL.push(APPTS[date][i]);
-  }
-  APPTS[date] = newL;
-  save(); checkRemind(); renderCal(0);
-  document.getElementById("srchRes").innerHTML = "<div style='background:#f0fff4;border:1.5px solid #74c69d;border-radius:10px;padding:14px;text-align:center'><div style='font-size:28px'>✅</div><p style='color:#2d6a4f;font-weight:700;margin-top:5px'>Cita cancelada exitosamente.</p></div>";
-  document.getElementById("srchIn").value = "";
+  cancelToSheet(code, function(res) {
+    loadAll(function() {
+      checkRemind(); renderCal(0); renderCal(1);
+      document.getElementById("srchRes").innerHTML = "<div style='background:#f0fff4;border:1.5px solid #74c69d;border-radius:10px;padding:14px;text-align:center'><div style='font-size:28px'>✅</div><p style='color:#2d6a4f;font-weight:700;margin-top:5px'>Cita cancelada exitosamente.</p></div>";
+      document.getElementById("srchIn").value = "";
+    });
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -971,21 +1003,15 @@ function updDay() {
   document.getElementById("dayBlkMsg").style.display = bi ? "block" : "none";
   // Hour blocks
   var bh = C.blkHours[adminD] || [];
-  var dow3 = getDow(adminD);
   var hh = "";
   for (var i = 0; i < C.hours.length; i++) {
-    var t    = C.hours[i];
-    var isB  = bh.indexOf(t) >= 0;
-    // Check if this hour is blocked by schedule rules
-    var scheduleBlocked = false;
-    if (dow3 === 0) scheduleBlocked = true; // domingo
-    if (dow3 >= 1 && dow3 <= 5 && (t === "11:00" || t === "11:30")) scheduleBlocked = true; // almuerzo
-    if (dow3 >= 1 && dow3 <= 5 && (t < "07:00" || t > "15:30")) scheduleBlocked = true;
-    if (dow3 === 6 && (t < "07:00" || t > "11:30")) scheduleBlocked = true;
-    var cls  = (scheduleBlocked || isB) ? "hb blk" : "hb";
-    var lbl  = scheduleBlocked ? "⛔ " + to12(t) : (isB ? "🚫 " + to12(t) : to12(t));
-    var ocl  = scheduleBlocked ? "" : "onclick='toggleBlkH(\"" + t + "\")'";
-    hh += "<button class='" + cls + "' " + ocl + " style='font-size:11px'>" + lbl + "</button>";
+    var t  = C.hours[i];
+    var isB = bh.indexOf(t) >= 0;
+    var isL = isLunch(adminD, t);
+    var cls = isL ? "hb blk" : (isB ? "hb blk" : "hb");
+    var lbl = isL ? "🍱 " + to12(t) : (isB ? "🚫 " + to12(t) : to12(t));
+    var onclick = isL ? "" : "onclick='toggleBlkH(\"" + t + "\")'";
+    hh += "<button class='" + cls + "' " + onclick + " style='font-size:11px'>" + lbl + "</button>";
   }
   document.getElementById("blkHrs").innerHTML = hh;
   // Appointments
@@ -1004,7 +1030,7 @@ function updDay() {
     if (veh)       h2 += "<br><small>Auto: " + veh + "</small>";
     if (a.note)    h2 += "<br><small style='color:#888'>Nota: " + a.note + "</small>";
     h2 += "<br><a href='" + wa + "' target='_blank' style='display:inline-block;margin-top:6px;background:#25D366;color:#fff;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none'>💬 WhatsApp Recordatorio</a>";
-    h2 += "</div><button class='xb' onclick='delA(\"" + adminD + "\"," + a.id + ")'>✕</button></div>";
+    h2 += "</div><button class='xb' onclick='delA(\"" + adminD + "\",\"" + a.code + "\")'>✕</button></div>";
   }
   document.getElementById("dayAppts").innerHTML = h2;
 }
@@ -1013,28 +1039,34 @@ function toggleBlkDay() {
   if (!adminD) return;
   var idx = -1;
   for (var i = 0; i < C.blkDates.length; i++) { if (C.blkDates[i].d === adminD) { idx = i; break; } }
-  if (idx >= 0) C.blkDates.splice(idx, 1);
-  else C.blkDates.push({d: adminD, msg: "Dia no disponible"});
-  save(); renderCal(1); updDay();
+  if (idx >= 0) {
+    C.blkDates.splice(idx, 1);
+    unblkDateToSheet(adminD);
+  } else {
+    C.blkDates.push({d: adminD, msg: "Dia no disponible"});
+    blkDateToSheet(adminD, "Dia no disponible");
+  }
+  renderCal(1); updDay();
 }
 
 function toggleBlkH(h) {
   if (!adminD) return;
   if (!C.blkHours[adminD]) C.blkHours[adminD] = [];
   var i = C.blkHours[adminD].indexOf(h);
-  if (i >= 0) C.blkHours[adminD].splice(i, 1);
-  else C.blkHours[adminD].push(h);
-  save(); updDay();
+  if (i >= 0) {
+    C.blkHours[adminD].splice(i, 1);
+    unblkHourToSheet(adminD, h);
+  } else {
+    C.blkHours[adminD].push(h);
+    blkHourToSheet(adminD, h);
+  }
+  updDay();
 }
 
-function delA(date, id) {
-  if (!APPTS[date]) return;
-  var newL = [];
-  for (var i = 0; i < APPTS[date].length; i++) {
-    if (APPTS[date][i].id !== id) newL.push(APPTS[date][i]);
-  }
-  APPTS[date] = newL;
-  save(); updDay(); renderAllA();
+function delA(date, code) {
+  cancelToSheet(code, function() {
+    loadAll(function() { updDay(); renderAllA(); });
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1068,7 +1100,7 @@ function renderAllA() {
       if (a.service) h += "<br><small>Servicio: " + a.service + "</small>";
       if (veh)       h += "<br><small>Auto: " + veh + "</small>";
       h += "<br><a href='" + wa + "' target='_blank' style='display:inline-block;margin-top:5px;background:#25D366;color:#fff;padding:4px 9px;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none'>💬 WhatsApp</a>";
-      h += "</div><button class='xb' onclick='delA(\"" + dt + "\"," + a.id + ")'>✕</button></div>";
+      h += "</div><button class='xb' onclick='delA(\"" + dt + "\",\"" + a.code + "\")'>✕</button></div>";
     }
     h += "</div>";
   }
@@ -1247,7 +1279,8 @@ function addBlkDate() {
   C.blkDates.push({d: v, msg: msg});
   document.getElementById("blkDIn").value = "";
   document.getElementById("blkDMsgIn").value = "";
-  save(); renderBlkList(); renderCal(1);
+  blkDateToSheet(v, msg);
+  renderBlkList(); renderCal(1);
 }
 
 function addBlkRange() {
@@ -1265,7 +1298,7 @@ function addBlkRange() {
   alert("Rango bloqueado correctamente");
 }
 
-function remBlkD(i) { C.blkDates.splice(i, 1);  save(); renderBlkList(); renderCal(1); }
+function remBlkD(i) { var d = C.blkDates[i].d; C.blkDates.splice(i, 1); unblkDateToSheet(d); renderBlkList(); renderCal(1); }
 function remBlkR(i) { C.blkRanges.splice(i, 1); save(); renderBlkList(); renderCal(1); }
 
 // ═══════════════════════════════════════════════════════
@@ -1321,7 +1354,7 @@ function saveCfg() {
   if (n) C.name = n;
   if (m) C.msg  = m;
   save();
-  alert("Cambios guardados");
+  alert("Cambios guardados - los clientes veran los cambios en su proxima visita");
 }
 
 function savePin() {
@@ -1355,10 +1388,12 @@ function cpLink() {
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
-load();
-renderCal(0);
-buildSvc();
-checkRemind();
+loadAll(function() {
+  renderCal(0);
+  renderCal(1);
+  buildSvc();
+  checkRemind();
+});
 </script>
 </body>
 </html>
