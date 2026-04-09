@@ -88,7 +88,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
 .bar-track{flex:1;background:#f0e8d8;border-radius:99px;height:20px;overflow:hidden}
 .bar-fill{height:100%;border-radius:99px;background:#c9803a;display:flex;align-items:center;padding-left:7px;font-size:10px;color:#fff;font-weight:700;min-width:20px}
 .bar-val{font-size:12px;color:#666;width:20px;text-align:right;flex-shrink:0;font-weight:700}
-.loading{text-align:center;padding:24px;color:#888;font-size:14px}
 .info-box{background:#e8f4fd;border:1.5px solid #90caf9;border-radius:10px;padding:11px 13px;margin-bottom:10px;font-size:13px;color:#1565c0}
 .wa-btn{display:inline-block;margin-top:6px;background:#25D366;color:#fff;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none}
 .tab-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -103,22 +102,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
   <div class="hdr"><h1 id="biz0">Osorio Auto Service</h1><p>Agenda tu cita facilmente</p></div>
   <div class="remind" id="remindBox"><h3>Tu cita es HOY!</h3><p id="remindMsg"></p></div>
   <div class="ok" id="okBox" style="display:none">
-    <div style="font-size:44px">&#9989;</div>
-    <h2>Cita confirmada!</h2>
+    <div style="font-size:44px">&#9989;</div><h2>Cita confirmada!</h2>
     <p id="okMsg" style="color:#444;font-size:13px;margin-top:5px;line-height:1.8"></p>
     <button class="btn" style="width:auto;padding:10px 24px;margin-top:14px" onclick="initClient()">Agendar otra cita</button>
   </div>
-  <div id="clientBody"><div class="loading">Cargando...</div></div>
+  <div id="clientBody"></div>
   <div style="text-align:center;margin-top:6px"><button class="ghost" onclick="goPage('pgL')">Panel administrador &#8594;</button></div>
 </div>
 
 <!-- LOGIN -->
 <div id="pgL" class="wrap" style="display:none">
-  <div class="hdr"><div style="font-size:38px">&#128274;</div><h1>Osorio Auto Service</h1><p>Acceso administrador</p></div>
+  <div class="hdr"><h1>Osorio Auto Service</h1><p>Acceso administrador</p></div>
   <div class="card">
-    <div class="field">
-      <label>PIN de acceso</label>
-      <input id="pinIn" type="password" maxlength="6" placeholder="&bull;&bull;&bull;&bull;" class="pin-in"
+    <div class="field"><label>PIN de acceso</label>
+      <input id="pinIn" type="password" maxlength="6" placeholder="****" class="pin-in"
         oninput="document.getElementById('pinErr').style.display='none'"
         onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
@@ -130,21 +127,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
 
 <!-- ADMIN -->
 <div id="pgA" class="wrap" style="display:none">
-  <div class="hdr"><div style="font-size:32px">&#9881;&#65039;</div><h1>Osorio Auto Service</h1><p>Panel de administracion</p></div>
+  <div class="hdr"><h1>Osorio Auto Service</h1><p>Panel de administracion</p></div>
   <div class="card">
-    <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">&#128279; Link para tus clientes:</p>
-    <p class="note">Comparte este link. Funciona en iPhone y Android en tiempo real.</p>
-    <div class="surl" id="sUrl">&#8212;</div>
+    <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">Link para tus clientes:</p>
+    <div class="surl" id="sUrl"></div>
     <button class="btn" id="cpBtn" onclick="cpLink()" style="margin-top:8px">&#128203; Copiar link</button>
   </div>
-
   <div class="tabs">
     <button class="tab on" onclick="stab('tCal',this)">&#128197; Cal</button>
     <button class="tab"    onclick="stab('tCitas',this)">&#128203; Citas</button>
     <button class="tab"    onclick="stab('tGraf',this)">&#128202; Graficas</button>
     <button class="tab"    onclick="stab('tFechas',this)">&#128198; Fechas</button>
-    <button class="tab"    onclick="stab('tServ',this)">&#9986;&#65039; Servicios</button>
-    <button class="tab"    onclick="stab('tCfg',this)">&#9881;&#65039; Config</button>
+    <button class="tab"    onclick="stab('tServ',this)">Servicios</button>
+    <button class="tab"    onclick="stab('tCfg',this)">&#9881; Config</button>
   </div>
 
   <div id="tCal" class="card">
@@ -154,10 +149,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
     <div id="dayPanel" style="display:none;margin-top:13px;padding-top:13px;border-top:1px solid #eee">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;gap:8px;flex-wrap:wrap">
         <b id="dayLbl" style="font-size:14px;color:#111"></b>
-        <button id="blkDayBtn" class="btn sm" onclick="toggleBlkDay()">&#128683; Bloquear dia</button>
+        <button id="blkDayBtn" class="btn sm" onclick="toggleBlkDay()">Bloquear dia</button>
       </div>
-      <p id="dayBlkMsg" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:8px">Dia bloqueado para clientes.</p>
-      <p style="font-size:12px;color:#555;margin-bottom:7px;font-weight:600">Bloquear horas especificas:</p>
+      <p id="dayBlkMsg" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:8px">Dia bloqueado.</p>
+      <p style="font-size:12px;color:#555;margin-bottom:7px;font-weight:600">Bloquear horas:</p>
       <div class="hg" id="blkHrs"></div>
       <div id="dayAppts" style="margin-top:11px"></div>
     </div>
@@ -166,31 +161,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
   <div id="tCitas" class="card" style="display:none">
     <div class="tab-hdr">
       <h2>&#128203; Todas las citas</h2>
-      <button class="btn sm tan" onclick="refreshCitas()">&#8635; Actualizar</button>
+      <button class="btn sm tan" onclick="renderAllA()">&#8635; Actualizar</button>
     </div>
-    <div id="allAppts"><div class="loading">Toca Actualizar para ver las citas.</div></div>
+    <div id="allAppts"></div>
   </div>
 
   <div id="tGraf" class="card" style="display:none"><h2>&#128202; Estadisticas</h2><div id="grafContent"></div></div>
 
   <div id="tFechas" class="card" style="display:none">
     <h2>&#128198; Bloquear fechas</h2>
-    <div class="info-box">Los clientes ven estos cambios en tiempo real. Domingos siempre cerrados automaticamente.</div>
+    <div class="info-box">Los clientes ven estos cambios inmediatamente.</div>
     <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:5px">Dia especifico</p>
     <div class="rb">
       <label>Fecha</label><input type="date" id="blkDIn"/>
-      <label>Mensaje para los clientes (obligatorio)</label>
+      <label>Mensaje para el cliente (obligatorio)</label>
       <textarea id="blkDMsgIn" placeholder="Ej: Cerrado por vacaciones"></textarea>
-      <button class="btn" style="margin-top:9px" onclick="addBlkDate()">&#128683; Bloquear este dia</button>
+      <button class="btn" style="margin-top:9px" onclick="addBlkDate()">Bloquear este dia</button>
     </div>
     <div class="divl"></div>
-    <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:5px">Rango de fechas (vacaciones)</p>
+    <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:5px">Rango de fechas</p>
     <div class="rb">
       <label>Desde</label><input type="date" id="rS"/>
       <label>Hasta</label><input type="date" id="rE"/>
       <label>Mensaje (obligatorio)</label>
-      <textarea id="rMsg" placeholder="Ej: De vacaciones — regresamos el 20 de mayo"></textarea>
-      <button class="btn" style="margin-top:9px" onclick="addBlkRange()">&#128683; Bloquear rango</button>
+      <textarea id="rMsg" placeholder="Ej: Vacaciones — regresamos el 20 de mayo"></textarea>
+      <button class="btn" style="margin-top:9px" onclick="addBlkRange()">Bloquear rango</button>
     </div>
     <div class="divl"></div>
     <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:7px">Fechas bloqueadas activas</p>
@@ -198,7 +193,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
   </div>
 
   <div id="tServ" class="card" style="display:none">
-    <h2>&#9986;&#65039; Servicios</h2>
+    <h2>Servicios</h2>
     <p class="note">La duracion en minutos bloquea el tiempo automaticamente.</p>
     <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
       <input id="newSvN" placeholder="Nombre del servicio" style="flex:1;min-width:130px;padding:11px;border:1.5px solid #ddd;border-radius:9px;font-size:13px;background:#fafafa;color:#111;outline:none;-webkit-appearance:none"/>
@@ -209,22 +204,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
   </div>
 
   <div id="tCfg" class="card" style="display:none">
-    <h2>&#9881;&#65039; Configuracion</h2>
-    <div class="info-box">Horario: Lun-Vie 7AM-3:30PM | Sab 7AM-11:30AM | Dom Cerrado<br>Almuerzo L-V: 11AM-12PM</div>
+    <h2>&#9881; Configuracion</h2>
+    <div class="info-box">Horario: Lun-Vie 7AM-3:30PM (almuerzo 11-12) | Sab 7AM-11:30AM | Dom Cerrado</div>
     <div class="field"><label>Nombre del negocio</label><input id="cfgN"/></div>
     <div class="field"><label>Mensaje de confirmacion</label><textarea id="cfgM" style="height:75px"></textarea></div>
     <div class="field">
       <label>Anticipacion minima mismo dia</label>
       <select id="cfgAdv" style="width:100%;padding:11px;border:1.5px solid #ddd;border-radius:9px;font-size:14px;color:#111;background:#fafafa;-webkit-appearance:none;font-family:inherit">
-        <option value="0">Sin limite</option>
-        <option value="1">1 hora</option>
-        <option value="2">2 horas</option>
-        <option value="3">3 horas</option>
-        <option value="4">4 horas</option>
+        <option value="0">Sin limite</option><option value="1">1 hora</option>
+        <option value="2">2 horas</option><option value="3">3 horas</option><option value="4">4 horas</option>
       </select>
     </div>
-    <div class="field">
-      <label>Cambiar PIN</label>
+    <div class="field"><label>Cambiar PIN</label>
       <div class="rf" style="margin-top:4px">
         <input id="cfgPin" type="password" maxlength="6" placeholder="Nuevo PIN" style="text-align:center;letter-spacing:8px;font-size:18px"/>
         <button class="btn sm" onclick="savePin()">Guardar</button>
@@ -240,684 +231,666 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
 </div>
 
 <script>
+// ═══════ CONFIG ═══════════════════════════════════════════
 var API = "https://script.google.com/macros/s/AKfycbzFn0IvM5KKctcXbDc1CxwTgSLJyhyoQXT6MF6ipGOvWhPb2sZWqcp_yhvDzuMkyWNhGA/exec";
 
-// Estado global — todo viene de Google Sheets
-var G = {
-  appts: {}, blkDates: [], blkHours: {},
+// ═══════ ESTADO — localStorage como base, Sheets como respaldo ═
+var D = {
+  appts:    {},
+  blkDates: [],
+  blkHours: {},
   services: [
     {n:"Cambio de aceite y filtro",d:30},
-    {n:"Diagnostico",d:60},{n:"Frenos",d:90},
-    {n:"Alineacion",d:60},{n:"Servicio general",d:60}
+    {n:"Diagnostico",d:60},
+    {n:"Frenos",d:90},
+    {n:"Alineacion",d:60},
+    {n:"Servicio general",d:60}
   ],
-  adv:2, pin:"1234", name:"Osorio Auto Service",
-  msg:"Su cita ha sido confirmada. Te esperamos puntual."
+  adv:  2,
+  pin:  "1234",
+  name: "Osorio Auto Service",
+  msg:  "Su cita ha sido confirmada. Te esperamos puntual."
 };
 
-var yr=new Date().getFullYear(), mo=new Date().getMonth();
-var selD=null, selH="", adminD=null;
-var MO=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-var DIAS=["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
-var ALL_H=["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"];
-
-// HELPERS
-function td(){var n=new Date();return fk(n.getFullYear(),n.getMonth(),n.getDate());}
-function fk(y,m,d){return y+"-"+p2(m+1)+"-"+p2(d);}
-function p2(n){return("0"+n).slice(-2);}
-
-// FIX: hora correcta — convierte HH:MM a 12h AM/PM
-function to12(t){
-  if(!t)return"";
-  var parts=t.split(":");
-  if(parts.length<2)return t;
-  var h=parseInt(parts[0],10);
-  var m=parts[1];
-  var ap=h>=12?"PM":"AM";
-  h=h%12;
-  if(h===0)h=12;
-  return h+":"+m+" "+ap;
+function saveLocal() {
+  try { localStorage.setItem("oas2", JSON.stringify(D)); } catch(e) {}
 }
 
-function fmtD(f){var p=f.split("-");return p[2]+" de "+MO[parseInt(p[1])-1]+" "+p[0];}
-function addM(t,mins){
-  var p=t.split(":"),h=parseInt(p[0],10),m=parseInt(p[1],10);
-  m+=mins;h+=Math.floor(m/60);m=m%60;
-  if(h>=24)return"23:59";
-  return p2(h)+":"+p2(m);
+function loadLocal() {
+  try {
+    var s = localStorage.getItem("oas2");
+    if (s) {
+      var o = JSON.parse(s);
+      if (o.appts)    D.appts    = o.appts;
+      if (o.blkDates) D.blkDates = o.blkDates;
+      if (o.blkHours) D.blkHours = o.blkHours;
+      if (o.services && o.services.length) D.services = o.services;
+      if (o.adv  !== undefined) D.adv  = o.adv;
+      if (o.pin)  D.pin  = o.pin;
+      if (o.name) D.name = o.name;
+      if (o.msg)  D.msg  = o.msg;
+    }
+  } catch(e) {}
 }
-function dow(f){var p=f.split("-");return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2])).getDay();}
-function genCode(n,t,h){
-  var nd=n.trim().split(" ")[0].toUpperCase().slice(0,3);
-  var dg="";for(var i=0;i<t.length;i++)if(t[i]>="0"&&t[i]<="9")dg+=t[i];
-  return nd+"-"+dg.slice(-4)+"-"+h.replace(":","");
+
+// Intenta sincronizar con Sheets (si falla, no importa)
+function syncFromSheets() {
+  fetch(API + "?action=getData")
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.ok) return;
+      // Merge: Sheets tiene prioridad para citas y bloqueos
+      D.appts    = d.appts    || D.appts;
+      D.blkDates = d.blockedDates || D.blkDates;
+      D.blkHours = d.blockedHours || D.blkHours;
+      var c = d.config || {};
+      if (c.services) try { var sv = JSON.parse(c.services); if (sv && sv.length) D.services = sv; } catch(e) {}
+      if (c.adv  !== undefined) D.adv  = parseInt(c.adv, 10) || 0;
+      if (c.pin)  D.pin  = c.pin;
+      if (c.name) D.name = c.name;
+      if (c.msg)  D.msg  = c.msg;
+      saveLocal();
+    })
+    .catch(function() {}); // silently fail
 }
-function ph(t){var r="";for(var i=0;i<t.length;i++)if(t[i]>="0"&&t[i]<="9")r+=t[i];return r;}
-function getSvcD(n){
-  for(var i=0;i<G.services.length;i++){
-    var s=G.services[i];
-    if((typeof s==="object"?s.n:s)===n)return typeof s==="object"?s.d:60;
+
+function sendToSheets(params) {
+  fetch(API + "?" + params).catch(function() {});
+}
+
+// ═══════ HELPERS ═══════════════════════════════════════════
+var yr = new Date().getFullYear(), mo = new Date().getMonth();
+var selD = null, selH = "", adminD = null;
+var MO   = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+var DIAS = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+var ALL_H = ["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30"];
+
+function td() { var n = new Date(); return fk(n.getFullYear(), n.getMonth(), n.getDate()); }
+function fk(y,m,d) { return y + "-" + p2(m+1) + "-" + p2(d); }
+function p2(n) { return ("0" + n).slice(-2); }
+
+function to12(t) {
+  if (!t) return "";
+  var p = t.toString().split(":");
+  if (p.length < 2) return t;
+  var h = parseInt(p[0], 10);
+  var m = p[1].length === 2 ? p[1] : "00";
+  if (isNaN(h)) return t;
+  var ap = h >= 12 ? "PM" : "AM";
+  var h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  return h12 + ":" + m + " " + ap;
+}
+
+function fmtD(f) { var p = f.split("-"); return p[2] + " de " + MO[parseInt(p[1],10)-1] + " " + p[0]; }
+
+function addM(t, mins) {
+  var p = t.split(":"), h = parseInt(p[0],10), m = parseInt(p[1],10);
+  m += mins; h += Math.floor(m/60); m = m % 60;
+  if (h >= 24) return "23:59";
+  return p2(h) + ":" + p2(m);
+}
+
+function dow(f) { var p = f.split("-"); return new Date(parseInt(p[0]), parseInt(p[1],10)-1, parseInt(p[2],10)).getDay(); }
+
+function genCode(name, tel, hour) {
+  var n = name.trim().split(" ")[0].toUpperCase().slice(0,3);
+  var dg = ""; for (var i = 0; i < tel.length; i++) if (tel[i] >= "0" && tel[i] <= "9") dg += tel[i];
+  return n + "-" + dg.slice(-4) + "-" + hour.replace(":", "");
+}
+
+function ph(t) { var r = ""; for (var i = 0; i < t.length; i++) if (t[i] >= "0" && t[i] <= "9") r += t[i]; return r; }
+
+function getSvcD(name) {
+  for (var i = 0; i < D.services.length; i++) {
+    var s = D.services[i], n = typeof s === "object" ? s.n : s;
+    if (n === name) return typeof s === "object" ? s.d : 60;
   }
   return 60;
 }
 
-// REGLAS DE HORARIO
-function isWorkH(date,hour){
-  var d=dow(date);
-  if(d===0)return false; // domingo cerrado
-  if(d>=1&&d<=5){ // lun-vie
-    if(hour<"07:00"||hour>"15:30")return false;
-    if(hour==="11:00"||hour==="11:30")return false; // almuerzo
+// ═══════ HORARIO ═══════════════════════════════════════════
+function isWorkH(date, hour) {
+  var d = dow(date);
+  if (d === 0) return false; // domingo
+  if (d >= 1 && d <= 5) { // lun-vie
+    if (hour < "07:00" || hour > "15:30") return false;
+    if (hour === "11:00" || hour === "11:30") return false; // almuerzo
     return true;
   }
-  if(d===6){ // sabado
-    if(hour<"07:00"||hour>"11:30")return false;
+  if (d === 6) { // sabado
+    if (hour < "07:00" || hour > "11:30") return false;
     return true;
   }
   return false;
 }
 
-function hourOk(date,hour){
-  if(!isWorkH(date,hour))return false;
-  var bh=G.blkHours[date]||[];
-  if(bh.indexOf(hour)>=0)return false;
-  if(!G.adv)return true;
-  var t=td();
-  if(date>t)return true;
-  if(date<t)return false;
-  var now=new Date(),at=new Date();
-  var pp=hour.split(":");
-  at.setHours(parseInt(pp[0],10),parseInt(pp[1],10),0,0);
-  return at>=new Date(now.getTime()+G.adv*3600000);
+function hourOk(date, hour) {
+  if (!isWorkH(date, hour)) return false;
+  var bh = D.blkHours[date] || [];
+  if (bh.indexOf(hour) >= 0) return false;
+  if (!D.adv) return true;
+  var t = td();
+  if (date > t) return true;
+  if (date < t) return false;
+  var now = new Date(), at = new Date(), pp = hour.split(":");
+  at.setHours(parseInt(pp[0],10), parseInt(pp[1],10), 0, 0);
+  return at >= new Date(now.getTime() + D.adv * 3600000);
 }
 
-function getBlkInfo(f){
-  for(var i=0;i<G.blkDates.length;i++)if(G.blkDates[i].d===f)return G.blkDates[i];
+function getBlkInfo(f) {
+  for (var i = 0; i < D.blkDates.length; i++) if (D.blkDates[i].d === f) return D.blkDates[i];
   return null;
 }
 
-function freeH(date,dur){
-  var ranges=[];
-  var list=G.appts[date]||[];
-  for(var i=0;i<list.length;i++){
-    ranges.push({s:list[i].hour, e:addM(list[i].hour, getSvcD(list[i].service))});
-  }
-  return ALL_H.filter(function(h){
-    if(!hourOk(date,h))return false;
-    var se=addM(h,dur||60);
-    for(var i=0;i<ranges.length;i++){
-      if(h<ranges[i].e&&se>ranges[i].s)return false;
-    }
+function freeH(date, dur) {
+  var ranges = [], list = D.appts[date] || [];
+  for (var i = 0; i < list.length; i++)
+    ranges.push({s: list[i].hour, e: addM(list[i].hour, getSvcD(list[i].service))});
+  return ALL_H.filter(function(h) {
+    if (!hourOk(date, h)) return false;
+    var se = addM(h, dur || 60);
+    for (var i = 0; i < ranges.length; i++) if (h < ranges[i].e && se > ranges[i].s) return false;
     return true;
   });
 }
 
-// API — 100% Google Sheets
-function api(params){
-  return fetch(API+"?"+params)
-    .then(function(r){return r.json();})
-    .catch(function(e){return{ok:false,error:"Error de red: "+e};});
+// ═══════ NAVEGACION ════════════════════════════════════════
+function goPage(id) {
+  ["pgC","pgL","pgA"].forEach(function(p) { document.getElementById(p).style.display = "none"; });
+  document.getElementById(id).style.display = "block";
+  window.scrollTo(0, 0);
+  if (id === "pgC") initClient();
+  if (id === "pgA") { document.getElementById("sUrl").textContent = window.location.href; renderCal(1); updDay(); renderAllA(); }
 }
 
-function loadAll(){
-  return fetch(API+"?action=getData")
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(!d.ok){console.error("getData error:",d.error);return;}
-      G.appts    = d.appts    || {};
-      G.blkDates = d.blockedDates || [];
-      G.blkHours = d.blockedHours || {};
-      var c=d.config||{};
-      if(c.services){try{var sv=JSON.parse(c.services);if(sv&&sv.length)G.services=sv;}catch(e){}}
-      if(c.adv!==undefined)G.adv=parseInt(c.adv)||0;
-      if(c.pin)G.pin=c.pin;
-      if(c.name)G.name=c.name;
-      if(c.msg)G.msg=c.msg;
-    })
-    .catch(function(e){console.error("loadAll error:",e);});
+// ═══════ CLIENTE ═══════════════════════════════════════════
+function initClient() {
+  document.getElementById("okBox").style.display = "none";
+  selD = null; selH = "";
+  document.getElementById("biz0").textContent = D.name;
+  buildClientBody();
+  checkRemind();
+  syncFromSheets(); // intenta actualizar desde Sheets en background
 }
 
-function saveCfgKey(k,v){
-  return api("action=saveCfg&key="+encodeURIComponent(k)+"&val="+encodeURIComponent(v));
-}
-
-// NAVEGACION
-function goPage(id){
-  ["pgC","pgL","pgA"].forEach(function(p){document.getElementById(p).style.display="none";});
-  document.getElementById(id).style.display="block";
-  window.scrollTo(0,0);
-  if(id==="pgC")initClient();
-  if(id==="pgA"){document.getElementById("sUrl").textContent=window.location.href;initAdmin();}
-}
-
-// CLIENTE
-function initClient(){
-  document.getElementById("okBox").style.display="none";
-  document.getElementById("clientBody").innerHTML='<div class="loading">Cargando horarios disponibles...</div>';
-  selD=null;selH="";
-  loadAll().then(function(){
-    document.getElementById("biz0").textContent=G.name;
-    buildClientBody();
-    checkRemind();
-  });
-}
-
-function buildClientBody(){
-  var el=document.getElementById("clientBody");
-  if(!el)return;
-  el.innerHTML=
-    '<div class="card" id="calCard"><h2>Selecciona una fecha</h2>'+
-    '<div class="cal-nav"><button class="arr" onclick="pm()">&#8249;</button><b id="cT"></b><button class="arr" onclick="nm()">&#8250;</button></div>'+
-    '<div class="g7" id="cCal"></div>'+
-    '<div class="blk-alert" id="blkAlert"><div style="font-size:28px">&#128683;</div><b>Fecha no disponible</b><p id="blkMsg"></p></div>'+
-    '<div class="nbar" id="nBar"></div></div>'+
-    '<div class="card" id="hCard" style="display:none"><h2>Horarios &mdash; <span id="hLbl" style="color:#c9803a"></span></h2><div class="hg" id="hGrid"></div></div>'+
-    '<div class="card" id="dCard" style="display:none"><h2>Informacion de la cita</h2>'+
-    '<div class="field"><label>Nombre completo *</label><input id="fNom" placeholder="Tu nombre completo" oninput="ck()"/></div>'+
-    '<div class="field"><label>Telefono *</label><input id="fTel" type="tel" placeholder="787-000-0000" oninput="ck()"/></div>'+
-    '<div class="field"><label>Servicio</label><select id="fSvc" onchange="onSvcCh()"></select></div>'+
-    '<div class="field"><label>Vehiculo (Marca y Modelo)</label>'+
-    '<div class="r2"><div><label>Marca</label><input id="fMarca" placeholder="Toyota"/></div><div><label>Modelo</label><input id="fModelo" placeholder="Corolla"/></div></div></div>'+
-    '<div class="field"><label>Nota adicional</label><textarea id="fNot" placeholder="Opcional..."></textarea></div>'+
-    '<button class="btn" id="cfBtn" onclick="book()" disabled>Confirmar cita</button></div>'+
-    '<div class="card"><h2>Buscar o cancelar mi cita</h2>'+
-    '<p class="note">Ingresa tu telefono o codigo de confirmacion.</p>'+
-    '<div class="rf"><input id="srchIn" placeholder="Telefono o codigo"/><button class="btn sm" onclick="srch()">Buscar</button></div>'+
+function buildClientBody() {
+  var el = document.getElementById("clientBody"); if (!el) return;
+  el.innerHTML =
+    '<div class="card"><h2>Selecciona una fecha</h2>' +
+    '<div class="cal-nav"><button class="arr" onclick="pm()">&#8249;</button><b id="cT"></b><button class="arr" onclick="nm()">&#8250;</button></div>' +
+    '<div class="g7" id="cCal"></div>' +
+    '<div class="blk-alert" id="blkAlert"><div style="font-size:28px">&#128683;</div><b>Fecha no disponible</b><p id="blkMsg"></p></div>' +
+    '<div class="nbar" id="nBar"></div></div>' +
+    '<div class="card" id="hCard" style="display:none"><h2>Horarios &mdash; <span id="hLbl" style="color:#c9803a"></span></h2><div class="hg" id="hGrid"></div></div>' +
+    '<div class="card" id="dCard" style="display:none"><h2>Informacion de la cita</h2>' +
+    '<div class="field"><label>Nombre completo *</label><input id="fNom" placeholder="Tu nombre completo" oninput="ck()"/></div>' +
+    '<div class="field"><label>Telefono *</label><input id="fTel" type="tel" placeholder="787-000-0000" oninput="ck()"/></div>' +
+    '<div class="field"><label>Servicio</label><select id="fSvc" onchange="onSvcCh()"></select></div>' +
+    '<div class="field"><label>Vehiculo</label><div class="r2"><div><label>Marca</label><input id="fMarca" placeholder="Toyota"/></div><div><label>Modelo</label><input id="fModelo" placeholder="Corolla"/></div></div></div>' +
+    '<div class="field"><label>Nota adicional</label><textarea id="fNot" placeholder="Opcional..."></textarea></div>' +
+    '<button class="btn" id="cfBtn" onclick="book()" disabled>Confirmar cita</button></div>' +
+    '<div class="card"><h2>Buscar o cancelar mi cita</h2>' +
+    '<p class="note">Ingresa tu telefono o codigo de confirmacion.</p>' +
+    '<div class="rf"><input id="srchIn" placeholder="Telefono o codigo"/><button class="btn sm" onclick="srch()">Buscar</button></div>' +
     '<div id="srchRes" style="margin-top:10px"></div></div>';
   renderCal(0);
   buildSvc();
 }
 
-function checkRemind(){
-  var t=td(),list=G.appts[t]||[],box=document.getElementById("remindBox"),msg=document.getElementById("remindMsg");
-  if(!box)return;
-  if(!list.length){box.style.display="none";return;}
-  var lines=list.map(function(a){return to12(a.hour)+(a.service?" — "+a.service:"")+(a.name?" ("+a.name+")":"");});
-  if(msg)msg.textContent=lines.join(", ");
-  box.style.display="block";
+function checkRemind() {
+  var t = td(), list = D.appts[t] || [], box = document.getElementById("remindBox"), msg = document.getElementById("remindMsg");
+  if (!box) return;
+  if (!list.length) { box.style.display = "none"; return; }
+  var lines = list.map(function(a) { return to12(a.hour) + (a.service ? " - " + a.service : "") + (a.name ? " (" + a.name + ")" : ""); });
+  if (msg) msg.textContent = lines.join(", ");
+  box.style.display = "block";
 }
 
-// CALENDARIO
-function pm(){if(mo===0){mo=11;yr--;}else mo--;drawCals();}
-function nm(){if(mo===11){mo=0;yr++;}else mo++;drawCals();}
-function drawCals(){renderCal(0);renderCal(1);}
+// ═══════ CALENDARIO ════════════════════════════════════════
+function pm() { if (mo === 0) { mo = 11; yr--; } else mo--; drawCals(); }
+function nm() { if (mo === 11) { mo = 0; yr++; } else mo++; drawCals(); }
+function drawCals() { renderCal(0); renderCal(1); }
 
-function renderCal(idx){
-  var cid=idx?"aCal":"cCal",tid=idx?"aT":"cT";
-  var el=document.getElementById(cid),tt=document.getElementById(tid);
-  if(!el)return;
-  if(tt)tt.textContent=MO[mo]+" "+yr;
-  var days=new Date(yr,mo+1,0).getDate(),first=new Date(yr,mo,1).getDay(),h="";
-  ["D","L","M","X","J","V","S"].forEach(function(d){h+="<div class='dl'>"+d+"</div>";});
-  for(var i=0;i<first;i++)h+="<div></div>";
-  for(var d=1;d<=days;d++){
-    var f=fk(yr,mo,d),past=f<td(),blk=getBlkInfo(f),sun=dow(f)===0;
-    var sd2=idx?adminD:selD,isSel=sd2===f,isT=f===td();
-    var n=(G.appts[f]||[]).length,dot=(n>0&&idx)?"<span class='dot'></span>":"";
-    var off=!idx&&(past||blk||sun);
-    var cls="d"+(isSel?" sel":isT?" tod":"")+(off?" off":"")+(idx&&blk?" blkd":"");
-    var sub=(blk&&!isSel)?"<span style='font-size:7px;display:block;color:"+(idx?"#c00":"#e74c3c")+"'>cerrado</span>":dot;
-    h+="<div class='"+cls+"' onclick='pickD(\""+f+"\","+idx+")'>"+d+sub+"</div>";
+function renderCal(idx) {
+  var cid = idx ? "aCal" : "cCal", tid = idx ? "aT" : "cT";
+  var el = document.getElementById(cid), tt = document.getElementById(tid);
+  if (!el) return;
+  if (tt) tt.textContent = MO[mo] + " " + yr;
+  var days = new Date(yr, mo+1, 0).getDate(), first = new Date(yr, mo, 1).getDay(), h = "";
+  ["D","L","M","X","J","V","S"].forEach(function(d) { h += "<div class='dl'>" + d + "</div>"; });
+  for (var i = 0; i < first; i++) h += "<div></div>";
+  for (var d = 1; d <= days; d++) {
+    var f = fk(yr, mo, d), past = f < td(), blk = getBlkInfo(f), sun = dow(f) === 0;
+    var sd2 = idx ? adminD : selD, isSel = sd2 === f, isT = f === td();
+    var n = (D.appts[f] || []).length, dot = (n > 0 && idx) ? "<span class='dot'></span>" : "";
+    var off = !idx && (past || blk || sun);
+    var cls = "d" + (isSel ? " sel" : isT ? " tod" : "") + (off ? " off" : "") + (idx && blk ? " blkd" : "");
+    var sub = (blk && !isSel) ? "<span style='font-size:7px;display:block;color:" + (idx ? "#c00" : "#e74c3c") + "'>cerrado</span>" : dot;
+    h += "<div class='" + cls + "' onclick='pickD(\"" + f + "\"," + idx + ")'>" + d + sub + "</div>";
   }
-  el.innerHTML=h;
+  el.innerHTML = h;
 }
 
-function pickD(f,idx){
-  if(!idx){
-    var ba=document.getElementById("blkAlert"),nb=document.getElementById("nBar");
-    var hc=document.getElementById("hCard"),dc=document.getElementById("dCard");
-    if(ba)ba.style.display="none";if(nb)nb.style.display="none";
-    if(hc)hc.style.display="none";if(dc)dc.style.display="none";
-    selD=null;selH="";
-    if(f<td()||dow(f)===0)return;
-    var bi=getBlkInfo(f);
-    if(bi){var bm=document.getElementById("blkMsg");if(bm)bm.textContent=bi.msg||"No hay citas disponibles.";if(ba)ba.style.display="block";renderCal(0);return;}
-    if(f===td()&&G.adv>0){if(nb){nb.textContent="Hoy se necesitan "+G.adv+" hora"+(G.adv>1?"s":"")+" de anticipacion.";nb.style.display="block";}}
-    selD=f;renderCal(0);updC();
-  }else{
-    adminD=(adminD===f)?null:f;renderCal(1);updDay();
+function pickD(f, idx) {
+  if (!idx) {
+    var ba = document.getElementById("blkAlert"), nb = document.getElementById("nBar");
+    var hc = document.getElementById("hCard"), dc = document.getElementById("dCard");
+    if (ba) ba.style.display = "none"; if (nb) nb.style.display = "none";
+    if (hc) hc.style.display = "none"; if (dc) dc.style.display = "none";
+    selD = null; selH = "";
+    if (f < td() || dow(f) === 0) return;
+    var bi = getBlkInfo(f);
+    if (bi) { var bm = document.getElementById("blkMsg"); if (bm) bm.textContent = bi.msg || "No hay citas disponibles."; if (ba) ba.style.display = "block"; renderCal(0); return; }
+    if (f === td() && D.adv > 0) { if (nb) { nb.textContent = "Hoy se necesitan " + D.adv + " hora" + (D.adv > 1 ? "s" : "") + " de anticipacion."; nb.style.display = "block"; } }
+    selD = f; renderCal(0); updC();
+  } else {
+    adminD = (adminD === f) ? null : f; renderCal(1); updDay();
   }
 }
 
-// FORMULARIO CLIENTE
-function getD(){
-  try{
-    var s=document.getElementById("fSvc");
-    if(!s||!s.value||s.selectedIndex<0)return 60;
-    var o=s.options[s.selectedIndex];
-    return parseInt(o.getAttribute("data-dur"),10)||60;
-  }catch(e){return 60;}
+// ═══════ FORMULARIO ════════════════════════════════════════
+function getD() {
+  try { var s = document.getElementById("fSvc"); if (!s || !s.value || s.selectedIndex < 0) return 60; return parseInt(s.options[s.selectedIndex].getAttribute("data-dur"), 10) || 60; }
+  catch(e) { return 60; }
 }
 
-function onSvcCh(){
-  var dur=getD();
-  if(selD&&selH){
-    var fr=freeH(selD,dur),ok=false;
-    for(var i=0;i<fr.length;i++)if(fr[i]===selH){ok=true;break;}
-    if(!ok)selH="";
-  }
+function onSvcCh() {
+  var dur = getD();
+  if (selD && selH) { var fr = freeH(selD, dur), ok = false; for (var i = 0; i < fr.length; i++) if (fr[i] === selH) { ok = true; break; } if (!ok) selH = ""; }
   updC();
 }
 
-function updC(){
-  var hc=document.getElementById("hCard"),dc=document.getElementById("dCard");
-  if(!selD){if(hc)hc.style.display="none";if(dc)dc.style.display="none";return;}
-  var hl=document.getElementById("hLbl");if(hl)hl.textContent=fmtD(selD);
-  var dur=getD(),fr=freeH(selD,dur),h="";
-  if(!fr.length){
-    h="<p style='color:#e74c3c;text-align:center;padding:12px;font-size:13px'>No hay horarios disponibles.</p>";
-  }else{
-    for(var i=0;i<fr.length;i++){
-      var t=fr[i];
-      h+="<button class='hb"+(selH===t?" on":"")+"' onclick='pickH(\""+t+"\")'> "+to12(t)+"</button>";
+function updC() {
+  var hc = document.getElementById("hCard"), dc = document.getElementById("dCard");
+  if (!selD) { if (hc) hc.style.display = "none"; if (dc) dc.style.display = "none"; return; }
+  var hl = document.getElementById("hLbl"); if (hl) hl.textContent = fmtD(selD);
+  var dur = getD(), fr = freeH(selD, dur), h = "";
+  if (!fr.length) { h = "<p style='color:#e74c3c;text-align:center;padding:12px;font-size:13px'>No hay horarios disponibles.</p>"; }
+  else { for (var i = 0; i < fr.length; i++) { var t = fr[i]; h += "<button class='hb" + (selH === t ? " on" : "") + "' onclick='pickH(\"" + t + "\")'>" + to12(t) + "</button>"; } }
+  var hg = document.getElementById("hGrid"); if (hg) hg.innerHTML = h;
+  if (hc) hc.style.display = "block";
+  if (selH) { if (dc) dc.style.display = "block"; var b = document.getElementById("cfBtn"); if (b) b.textContent = "Confirmar - " + to12(selH) + " (" + dur + " min)"; ck(); }
+  else { if (dc) dc.style.display = "none"; }
+}
+
+function pickH(h) { selH = h; updC(); }
+
+function ck() {
+  var n = document.getElementById("fNom"), t = document.getElementById("fTel"), b = document.getElementById("cfBtn");
+  if (b && n && t) b.disabled = (!n.value.trim() || !t.value.trim());
+}
+
+function buildSvc() {
+  var s = document.getElementById("fSvc"); if (!s) return;
+  var h = "<option value=''>-- Selecciona un servicio --</option>";
+  for (var i = 0; i < D.services.length; i++) {
+    var sv = D.services[i], nm = typeof sv === "object" ? sv.n : sv, dur = typeof sv === "object" ? sv.d : 60;
+    h += "<option value='" + nm + "' data-dur='" + dur + "'>" + nm + " (" + dur + " min)</option>";
+  }
+  s.innerHTML = h;
+}
+
+function book() {
+  var nom   = document.getElementById("fNom").value.trim();
+  var tel   = document.getElementById("fTel").value.trim();
+  if (!nom || !tel || !selD || !selH) return;
+  var svc   = document.getElementById("fSvc").value;
+  var dur   = getD();
+  var nota  = document.getElementById("fNot").value.trim();
+  var marca = document.getElementById("fMarca").value.trim();
+  var modelo= document.getElementById("fModelo").value.trim();
+  var veh   = [marca, modelo].filter(function(x) { return x; }).join(" ");
+  var code  = genCode(nom, tel, selH);
+  var appt  = {code:code, hour:selH, name:nom, tel:tel, service:svc, vehiculo:veh, note:nota};
+  var btn   = document.getElementById("cfBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Confirmando..."; }
+
+  // Guardar localmente primero (siempre funciona)
+  if (!D.appts[selD]) D.appts[selD] = [];
+  D.appts[selD].push(appt);
+  saveLocal();
+
+  // Intentar guardar en Sheets (en background)
+  sendToSheets("action=book&fecha=" + encodeURIComponent(selD) +
+    "&hora="      + encodeURIComponent(selH) +
+    "&nombre="    + encodeURIComponent(nom) +
+    "&telefono="  + encodeURIComponent(tel) +
+    "&servicio="  + encodeURIComponent(svc) +
+    "&vehiculo="  + encodeURIComponent(veh) +
+    "&nota="      + encodeURIComponent(nota) +
+    "&codigo="    + encodeURIComponent(code));
+
+  // Mostrar confirmacion
+  var lines = [D.msg, "", "Fecha: " + fmtD(selD), "Hora: " + to12(selH) + " (" + dur + " min)"];
+  if (svc)  lines.push("Servicio: " + svc);
+  if (veh)  lines.push("Vehiculo: " + veh);
+  if (nota) lines.push("Nota: " + nota);
+  lines.push("", "Codigo: " + code, "(Guardalo para cancelar si lo necesitas)");
+  var el = document.getElementById("okMsg");
+  if (el) {
+    el.innerHTML = "";
+    lines.forEach(function(l) { var ln = document.createElement("div"); ln.textContent = l; if (!l) ln.style.height = "6px"; el.appendChild(ln); });
+  }
+  document.getElementById("okBox").style.display = "block";
+  selD = null; selH = "";
+}
+
+// ═══════ BUSCAR / CANCELAR ═════════════════════════════════
+function srch() {
+  var q = document.getElementById("srchIn").value.trim().toLowerCase();
+  var res = document.getElementById("srchRes");
+  if (!q) { res.innerHTML = "<p style='color:#e74c3c;font-size:13px'>Ingresa tu telefono o codigo.</p>"; return; }
+  var found = [], dates = Object.keys(D.appts);
+  for (var di = 0; di < dates.length; di++) {
+    var dt = dates[di], list = D.appts[dt] || [];
+    for (var ai = 0; ai < list.length; ai++) {
+      var a = list[ai], qd = ph(q), td2 = ph(a.tel || "");
+      if ((qd.length > 0 && td2.indexOf(qd) >= 0) || (a.code && a.code.toLowerCase() === q) || (a.name && a.name.toLowerCase().indexOf(q) >= 0))
+        found.push({date:dt, a:a});
     }
   }
-  var hg=document.getElementById("hGrid");if(hg)hg.innerHTML=h;
-  if(hc)hc.style.display="block";
-  if(selH){
-    if(dc)dc.style.display="block";
-    var b=document.getElementById("cfBtn");
-    if(b)b.textContent="Confirmar \u2014 "+to12(selH)+" ("+dur+" min)";
-    ck();
-  }else{if(dc)dc.style.display="none";}
-}
-
-function pickH(h){selH=h;updC();}
-
-function ck(){
-  var n=document.getElementById("fNom"),t=document.getElementById("fTel"),b=document.getElementById("cfBtn");
-  if(b&&n&&t)b.disabled=(!n.value.trim()||!t.value.trim());
-}
-
-function buildSvc(){
-  var s=document.getElementById("fSvc");if(!s)return;
-  var h="<option value=''>-- Selecciona un servicio --</option>";
-  for(var i=0;i<G.services.length;i++){
-    var sv=G.services[i],nm=typeof sv==="object"?sv.n:sv,dur=typeof sv==="object"?sv.d:60;
-    h+="<option value='"+nm+"' data-dur='"+dur+"'>"+nm+" ("+dur+" min)</option>";
+  if (!found.length) { res.innerHTML = "<p style='color:#888;font-size:13px;text-align:center;padding:10px'>No encontramos citas.</p>"; return; }
+  var h = "";
+  for (var fi = 0; fi < found.length; fi++) {
+    var it = found[fi], a = it.a, dt = it.date, past = dt < td();
+    h += "<div class='acard'><div class='acard-top'><div>";
+    h += "<b style='color:#c9803a;font-size:15px'>" + to12(a.hour) + "</b><br>";
+    h += "<span style='font-size:13px'>" + fmtD(dt) + "</span><br>";
+    h += "<span style='font-size:13px'>" + a.name + "</span><br>";
+    if (a.service)  h += "<span style='font-size:12px;color:#555'>" + a.service + "</span><br>";
+    if (a.vehiculo) h += "<span style='font-size:12px;color:#555'>Auto: " + a.vehiculo + "</span><br>";
+    if (a.note)     h += "<span style='font-size:12px;color:#888'>Nota: " + a.note + "</span><br>";
+    h += "<span style='font-size:11px;color:#aaa'>Codigo: " + a.code + "</span></div>";
+    if (!past) h += "<button class='btn sm red' onclick='clientCancel(\"" + it.date + "\",\"" + a.code + "\")'>Cancelar</button>";
+    else h += "<span style='font-size:11px;color:#bbb'>Pasada</span>";
+    h += "</div></div>";
   }
-  s.innerHTML=h;
+  res.innerHTML = h;
 }
 
-function book(){
-  var nom=document.getElementById("fNom").value.trim();
-  var tel=document.getElementById("fTel").value.trim();
-  if(!nom||!tel||!selD||!selH)return;
-  var svc=document.getElementById("fSvc").value;
-  var dur=getD();
-  var nota=document.getElementById("fNot").value.trim();
-  var marca=document.getElementById("fMarca").value.trim();
-  var modelo=document.getElementById("fModelo").value.trim();
-  var veh=[marca,modelo].filter(function(x){return x;}).join(" ");
-  var code=genCode(nom,tel,selH);
-  var btn=document.getElementById("cfBtn");
-  if(btn){btn.disabled=true;btn.textContent="Guardando...";}
-
-  api("action=book"
-    +"&fecha="+encodeURIComponent(selD)
-    +"&hora="+encodeURIComponent(selH)
-    +"&nombre="+encodeURIComponent(nom)
-    +"&telefono="+encodeURIComponent(tel)
-    +"&servicio="+encodeURIComponent(svc)
-    +"&vehiculo="+encodeURIComponent(veh)
-    +"&nota="+encodeURIComponent(nota)
-    +"&codigo="+encodeURIComponent(code)
-  ).then(function(d){
-    if(!d.ok){
-      if(btn){btn.disabled=false;btn.textContent="Confirmar cita";}
-      alert("Error al guardar: "+(d.error||"Intenta de nuevo"));
-      return;
-    }
-    // Actualizar estado local
-    if(!G.appts[selD])G.appts[selD]=[];
-    G.appts[selD].push({code:code,hour:selH,name:nom,tel:tel,service:svc,vehiculo:veh,note:nota});
-    // Mostrar confirmacion
-    var lines=[G.msg,"","Fecha: "+fmtD(selD),"Hora: "+to12(selH)+" ("+dur+" min)"];
-    if(svc)lines.push("Servicio: "+svc);
-    if(veh)lines.push("Vehiculo: "+veh);
-    if(nota)lines.push("Nota: "+nota);
-    lines.push("","Tu codigo: "+code,"(Guardalo para cancelar si lo necesitas)");
-    var el=document.getElementById("okMsg");
-    if(el){
-      el.innerHTML="";
-      lines.forEach(function(l){
-        var ln=document.createElement("div");
-        ln.textContent=l;
-        if(!l)ln.style.height="6px";
-        el.appendChild(ln);
-      });
-    }
-    document.getElementById("okBox").style.display="block";
-    selD=null;selH="";
-  });
-}
-
-// BUSCAR Y CANCELAR
-function srch(){
-  var q=document.getElementById("srchIn").value.trim().toLowerCase();
-  var res=document.getElementById("srchRes");
-  if(!q){res.innerHTML="<p style='color:#e74c3c;font-size:13px'>Ingresa tu telefono o codigo.</p>";return;}
-  res.innerHTML="<p style='color:#888;font-size:13px'>Buscando...</p>";
-  loadAll().then(function(){
-    var found=[],dates=Object.keys(G.appts);
-    for(var di=0;di<dates.length;di++){
-      var dt=dates[di],list=G.appts[dt]||[];
-      for(var ai=0;ai<list.length;ai++){
-        var a=list[ai],qd=ph(q),td2=ph(a.tel||"");
-        if((qd.length>0&&td2.indexOf(qd)>=0)||(a.code&&a.code.toLowerCase()===q)||(a.name&&a.name.toLowerCase().indexOf(q)>=0))
-          found.push({date:dt,a:a});
-      }
-    }
-    if(!found.length){res.innerHTML="<p style='color:#888;font-size:13px;text-align:center;padding:10px'>No encontramos citas.</p>";return;}
-    var h="";
-    for(var fi=0;fi<found.length;fi++){
-      var it=found[fi],a=it.a,dt=it.date,past=dt<td();
-      h+="<div class='acard'><div class='acard-top'><div>";
-      h+="<b style='color:#c9803a;font-size:15px'>"+to12(a.hour)+"</b><br>";
-      h+="<span style='font-size:13px'>"+fmtD(dt)+"</span><br>";
-      h+="<span style='font-size:13px'>"+a.name+"</span><br>";
-      if(a.service)h+="<span style='font-size:12px;color:#555'>"+a.service+"</span><br>";
-      if(a.vehiculo)h+="<span style='font-size:12px;color:#555'>&#128663; "+a.vehiculo+"</span><br>";
-      if(a.note)h+="<span style='font-size:12px;color:#888'>Nota: "+a.note+"</span><br>";
-      h+="<span style='font-size:11px;color:#aaa'>Codigo: "+a.code+"</span>";
-      h+="</div>";
-      if(!past)h+="<button class='btn sm red' onclick='clientCancel(\""+a.code+"\")'>Cancelar</button>";
-      else h+="<span style='font-size:11px;color:#bbb'>Pasada</span>";
-      h+="</div></div>";
-    }
-    res.innerHTML=h;
-  });
-}
-
-function clientCancel(code){
-  if(!confirm("Seguro que quieres cancelar esta cita?"))return;
-  api("action=cancel&codigo="+encodeURIComponent(code)).then(function(d){
-    if(!d.ok){alert("Error al cancelar: "+(d.error||"Intenta de nuevo"));return;}
-    document.getElementById("srchRes").innerHTML="<div style='background:#f0fff4;border:1.5px solid #74c69d;border-radius:10px;padding:14px;text-align:center'><div style='font-size:28px'>&#9989;</div><p style='color:#2d6a4f;font-weight:700;margin-top:5px'>Cita cancelada exitosamente.</p></div>";
-    document.getElementById("srchIn").value="";
-    // Quitar de estado local
-    var dates=Object.keys(G.appts);
-    for(var di=0;di<dates.length;di++){
-      var dt=dates[di],nl=[];
-      for(var i=0;i<G.appts[dt].length;i++)if(G.appts[dt][i].code!==code)nl.push(G.appts[dt][i]);
-      G.appts[dt]=nl;
-    }
-    checkRemind();renderCal(0);
-  });
-}
-
-// LOGIN
-function doLogin(){
-  var v=document.getElementById("pinIn").value;
-  if(v===G.pin){document.getElementById("pinIn").value="";goPage("pgA");}
-  else{document.getElementById("pinErr").style.display="block";document.getElementById("pinIn").value="";}
-}
-
-// ADMIN
-function initAdmin(){
-  loadAll().then(function(){renderCal(1);renderBlkList();});
-}
-
-function stab(id,btn){
-  ["tCal","tCitas","tGraf","tFechas","tServ","tCfg"].forEach(function(t){var e=document.getElementById(t);if(e)e.style.display="none";});
-  var el=document.getElementById(id);if(el)el.style.display="block";
-  document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on");});
-  if(btn)btn.classList.add("on");
-  if(id==="tCitas")refreshCitas();
-  if(id==="tGraf")renderGraf();
-  if(id==="tFechas")renderBlkList();
-  if(id==="tServ")renderSvs();
-  if(id==="tCfg"){document.getElementById("cfgN").value=G.name;document.getElementById("cfgM").value=G.msg;document.getElementById("cfgAdv").value=String(G.adv);}
-}
-
-function refreshCitas(){
-  var el=document.getElementById("allAppts");
-  if(el)el.innerHTML="<div class='loading'>Actualizando desde Google Sheets...</div>";
-  loadAll().then(function(){renderAllA();renderCal(1);if(adminD)updDay();});
-}
-
-// ADMIN DIA
-function updDay(){
-  var dp=document.getElementById("dayPanel");if(!dp)return;
-  if(!adminD){dp.style.display="none";return;}
-  dp.style.display="block";
-  document.getElementById("dayLbl").textContent=fmtD(adminD);
-  var isDirect=false;
-  for(var i=0;i<G.blkDates.length;i++)if(G.blkDates[i].d===adminD){isDirect=true;break;}
-  var bi=getBlkInfo(adminD);
-  var btn=document.getElementById("blkDayBtn");
-  if(btn)btn.textContent=isDirect?"&#9989; Desbloquear":"&#128683; Bloquear dia";
-  document.getElementById("dayBlkMsg").style.display=bi?"block":"none";
-
-  // Horas
-  var bh=G.blkHours[adminD]||[],hh="";
-  for(var i=0;i<ALL_H.length;i++){
-    var t=ALL_H[i],isB=bh.indexOf(t)>=0,isSched=!isWorkH(adminD,t);
-    var cls=(isSched||isB)?"hb blk":"hb";
-    var lbl=isSched?"&#9940; "+to12(t):(isB?"&#128683; "+to12(t):to12(t));
-    var ocl=isSched?"":"onclick='toggleBlkH(\""+t+"\")'";
-    hh+="<button class='"+cls+"' "+ocl+" style='font-size:11px'>"+lbl+"</button>";
+function clientCancel(date, code) {
+  if (!confirm("Seguro que quieres cancelar esta cita?")) return;
+  // Cancelar localmente
+  if (D.appts[date]) {
+    var nl = []; for (var i = 0; i < D.appts[date].length; i++) if (D.appts[date][i].code !== code) nl.push(D.appts[date][i]);
+    D.appts[date] = nl;
   }
-  document.getElementById("blkHrs").innerHTML=hh;
-
-  // Citas del dia
-  var list=G.appts[adminD]||[];
-  var sorted=list.slice().sort(function(a,b){return a.hour.localeCompare(b.hour);});
-  var h2=sorted.length?"":"<p style='color:#bbb;font-size:13px'>Sin citas este dia.</p>";
-  for(var i=0;i<sorted.length;i++){
-    var a=sorted[i],wa=waLink(a,adminD);
-    h2+="<div class='arow'><div class='ar-i'>";
-    h2+="<b style='color:#c9803a'>"+to12(a.hour)+"</b> &#8212; <b>"+a.name+"</b><br>";
-    h2+="<small style='color:#555'>&#128241; "+a.tel+"</small>";
-    if(a.service)h2+="<br><small>&#9986;&#65039; "+a.service+"</small>";
-    if(a.vehiculo)h2+="<br><small>&#128663; "+a.vehiculo+"</small>";
-    if(a.note)h2+="<br><small style='color:#888'>&#128172; "+a.note+"</small>";
-    h2+="<br><a href='"+wa+"' target='_blank' class='wa-btn'>&#128172; WhatsApp Recordatorio</a>";
-    h2+="</div><button class='xb' onclick='delA(\""+a.code+"\",\""+adminD+"\")'>&#10005;</button></div>";
-  }
-  document.getElementById("dayAppts").innerHTML=h2;
+  saveLocal();
+  // Intentar cancelar en Sheets
+  sendToSheets("action=cancel&codigo=" + encodeURIComponent(code));
+  document.getElementById("srchRes").innerHTML = "<div style='background:#f0fff4;border:1.5px solid #74c69d;border-radius:10px;padding:14px;text-align:center'><div style='font-size:28px'>&#9989;</div><p style='color:#2d6a4f;font-weight:700;margin-top:5px'>Cita cancelada.</p></div>";
+  document.getElementById("srchIn").value = "";
+  checkRemind(); renderCal(0);
 }
 
-function toggleBlkDay(){
-  if(!adminD)return;
-  var idx=-1;for(var i=0;i<G.blkDates.length;i++)if(G.blkDates[i].d===adminD){idx=i;break;}
-  if(idx>=0){
-    G.blkDates.splice(idx,1);
-    api("action=unblkDate&fecha="+encodeURIComponent(adminD));
-  }else{
-    G.blkDates.push({d:adminD,msg:"Dia no disponible"});
-    api("action=blkDate&fecha="+encodeURIComponent(adminD)+"&msg="+encodeURIComponent("Dia no disponible"));
-  }
-  renderCal(1);updDay();
+// ═══════ LOGIN ═════════════════════════════════════════════
+function doLogin() {
+  var v = document.getElementById("pinIn").value;
+  if (v === D.pin) { document.getElementById("pinIn").value = ""; goPage("pgA"); }
+  else { document.getElementById("pinErr").style.display = "block"; document.getElementById("pinIn").value = ""; }
 }
 
-function toggleBlkH(h){
-  if(!adminD)return;
-  if(!G.blkHours[adminD])G.blkHours[adminD]=[];
-  var i=G.blkHours[adminD].indexOf(h);
-  if(i>=0){
-    G.blkHours[adminD].splice(i,1);
-    api("action=unblkHour&fecha="+encodeURIComponent(adminD)+"&hora="+encodeURIComponent(h));
-  }else{
-    G.blkHours[adminD].push(h);
-    api("action=blkHour&fecha="+encodeURIComponent(adminD)+"&hora="+encodeURIComponent(h));
-  }
-  updDay();
+// ═══════ ADMIN TABS ════════════════════════════════════════
+function stab(id, btn) {
+  ["tCal","tCitas","tGraf","tFechas","tServ","tCfg"].forEach(function(t) { var e = document.getElementById(t); if (e) e.style.display = "none"; });
+  var el = document.getElementById(id); if (el) el.style.display = "block";
+  document.querySelectorAll(".tab").forEach(function(b) { b.classList.remove("on"); });
+  if (btn) btn.classList.add("on");
+  if (id === "tCitas")  renderAllA();
+  if (id === "tGraf")   renderGraf();
+  if (id === "tFechas") renderBlkList();
+  if (id === "tServ")   renderSvs();
+  if (id === "tCfg")    { document.getElementById("cfgN").value = D.name; document.getElementById("cfgM").value = D.msg; document.getElementById("cfgAdv").value = String(D.adv); }
 }
 
-function delA(code,date){
-  if(!confirm("Eliminar esta cita?"))return;
-  api("action=cancel&codigo="+encodeURIComponent(code)).then(function(d){
-    if(!d.ok){alert("Error al eliminar: "+(d.error||""));return;}
-    if(G.appts[date]){
-      var nl=[];for(var i=0;i<G.appts[date].length;i++)if(G.appts[date][i].code!==code)nl.push(G.appts[date][i]);
-      G.appts[date]=nl;
+// ═══════ ADMIN DIA ═════════════════════════════════════════
+function updDay() {
+  var dp = document.getElementById("dayPanel"); if (!dp) return;
+  if (!adminD) { dp.style.display = "none"; return; }
+  dp.style.display = "block";
+  document.getElementById("dayLbl").textContent = fmtD(adminD);
+  var isDirect = false; for (var i = 0; i < D.blkDates.length; i++) if (D.blkDates[i].d === adminD) { isDirect = true; break; }
+  var bi = getBlkInfo(adminD);
+  var btn = document.getElementById("blkDayBtn"); if (btn) btn.textContent = isDirect ? "Desbloquear dia" : "Bloquear dia";
+  document.getElementById("dayBlkMsg").style.display = bi ? "block" : "none";
+
+  var bh = D.blkHours[adminD] || [], hh = "";
+  for (var i = 0; i < ALL_H.length; i++) {
+    var t = ALL_H[i], isB = bh.indexOf(t) >= 0, isSched = !isWorkH(adminD, t);
+    var cls = (isSched || isB) ? "hb blk" : "hb";
+    var lbl = isSched ? "[cerrado] " + to12(t) : (isB ? "[bloq] " + to12(t) : to12(t));
+    var ocl = isSched ? "" : "onclick='toggleBlkH(\"" + t + "\")'";
+    hh += "<button class='" + cls + "' " + ocl + " style='font-size:11px'>" + lbl + "</button>";
+  }
+  document.getElementById("blkHrs").innerHTML = hh;
+
+  var list = D.appts[adminD] || [], sorted = list.slice().sort(function(a,b) { return a.hour.localeCompare(b.hour); });
+  var h2 = sorted.length ? "" : "<p style='color:#bbb;font-size:13px'>Sin citas este dia.</p>";
+  for (var i = 0; i < sorted.length; i++) {
+    var a = sorted[i], wa = waLink(a, adminD);
+    h2 += "<div class='arow'><div class='ar-i'>";
+    h2 += "<b style='color:#c9803a'>" + to12(a.hour) + "</b> - <b>" + a.name + "</b><br>";
+    h2 += "<small style='color:#555'>Tel: " + a.tel + "</small>";
+    if (a.service)  h2 += "<br><small>Servicio: " + a.service + "</small>";
+    if (a.vehiculo) h2 += "<br><small>Auto: " + a.vehiculo + "</small>";
+    if (a.note)     h2 += "<br><small style='color:#888'>Nota: " + a.note + "</small>";
+    h2 += "<br><a href='" + wa + "' target='_blank' class='wa-btn'>WhatsApp Recordatorio</a>";
+    h2 += "</div><button class='xb' onclick='delA(\"" + a.code + "\",\"" + adminD + "\")'>&#10005;</button></div>";
+  }
+  document.getElementById("dayAppts").innerHTML = h2;
+}
+
+function toggleBlkDay() {
+  if (!adminD) return;
+  var idx = -1; for (var i = 0; i < D.blkDates.length; i++) if (D.blkDates[i].d === adminD) { idx = i; break; }
+  if (idx >= 0) {
+    D.blkDates.splice(idx, 1);
+    sendToSheets("action=unblkDate&fecha=" + encodeURIComponent(adminD));
+  } else {
+    D.blkDates.push({d:adminD, msg:"Dia no disponible"});
+    sendToSheets("action=blkDate&fecha=" + encodeURIComponent(adminD) + "&msg=" + encodeURIComponent("Dia no disponible"));
+  }
+  saveLocal(); renderCal(1); updDay();
+}
+
+function toggleBlkH(h) {
+  if (!adminD) return;
+  if (!D.blkHours[adminD]) D.blkHours[adminD] = [];
+  var i = D.blkHours[adminD].indexOf(h);
+  if (i >= 0) {
+    D.blkHours[adminD].splice(i, 1);
+    sendToSheets("action=unblkHour&fecha=" + encodeURIComponent(adminD) + "&hora=" + encodeURIComponent(h));
+  } else {
+    D.blkHours[adminD].push(h);
+    sendToSheets("action=blkHour&fecha=" + encodeURIComponent(adminD) + "&hora=" + encodeURIComponent(h));
+  }
+  saveLocal(); updDay();
+}
+
+function delA(code, date) {
+  if (!confirm("Eliminar esta cita?")) return;
+  if (D.appts[date]) {
+    var nl = []; for (var i = 0; i < D.appts[date].length; i++) if (D.appts[date][i].code !== code) nl.push(D.appts[date][i]);
+    D.appts[date] = nl;
+  }
+  saveLocal();
+  sendToSheets("action=cancel&codigo=" + encodeURIComponent(code));
+  updDay(); renderAllA();
+}
+
+// ═══════ TODAS LAS CITAS ═══════════════════════════════════
+function renderAllA() {
+  var el = document.getElementById("allAppts"); if (!el) return;
+  var entries = [], dates = Object.keys(D.appts);
+  for (var i = 0; i < dates.length; i++) if ((D.appts[dates[i]] || []).length > 0) entries.push([dates[i], D.appts[dates[i]]]);
+  entries.sort(function(a,b) { return a[0].localeCompare(b[0]); });
+  if (!entries.length) { el.innerHTML = "<p style='color:#bbb;text-align:center;padding:12px;font-size:14px'>Sin citas aun.</p>"; return; }
+  var tot = 0; for (var i = 0; i < entries.length; i++) tot += entries[i][1].length;
+  var h = "<p style='font-size:13px;color:#666;margin-bottom:11px'>Total: <b>" + tot + " citas</b></p>";
+  for (var ei = 0; ei < entries.length; ei++) {
+    var dt = entries[ei][0], list = entries[ei][1], sorted = list.slice().sort(function(a,b) { return a.hour.localeCompare(b.hour); });
+    h += "<div style='margin-bottom:14px'><div class='slbl'>" + fmtD(dt) + "</div>";
+    for (var ai = 0; ai < sorted.length; ai++) {
+      var a = sorted[ai], wa = waLink(a, dt);
+      h += "<div class='arow'><div class='ar-i'>";
+      h += "<b style='color:#c9803a'>" + to12(a.hour) + "</b> - <b>" + a.name + "</b><br>";
+      h += "<small style='color:#555'>Tel: " + a.tel + "</small>";
+      if (a.service)  h += "<br><small>Servicio: " + a.service + "</small>";
+      if (a.vehiculo) h += "<br><small>Auto: " + a.vehiculo + "</small>";
+      if (a.note)     h += "<br><small style='color:#888'>Nota: " + a.note + "</small>";
+      h += "<br><a href='" + wa + "' target='_blank' class='wa-btn'>WhatsApp</a>";
+      h += "</div><button class='xb' onclick='delA(\"" + a.code + "\",\"" + dt + "\")'>&#10005;</button></div>";
     }
-    updDay();renderAllA();
-  });
-}
-
-// TODAS LAS CITAS
-function renderAllA(){
-  var el=document.getElementById("allAppts");if(!el)return;
-  var entries=[],dates=Object.keys(G.appts);
-  for(var i=0;i<dates.length;i++)if((G.appts[dates[i]]||[]).length>0)entries.push([dates[i],G.appts[dates[i]]]);
-  entries.sort(function(a,b){return a[0].localeCompare(b[0]);});
-  if(!entries.length){el.innerHTML="<p style='color:#bbb;text-align:center;padding:12px;font-size:14px'>Sin citas aun.</p>";return;}
-  var tot=0;for(var i=0;i<entries.length;i++)tot+=entries[i][1].length;
-  var h="<p style='font-size:13px;color:#666;margin-bottom:11px'>Total: <b>"+tot+" citas</b></p>";
-  for(var ei=0;ei<entries.length;ei++){
-    var dt=entries[ei][0],list=entries[ei][1];
-    var sorted=list.slice().sort(function(a,b){return a.hour.localeCompare(b.hour);});
-    h+="<div style='margin-bottom:14px'><div class='slbl'>"+fmtD(dt)+"</div>";
-    for(var ai=0;ai<sorted.length;ai++){
-      var a=sorted[ai],wa=waLink(a,dt);
-      h+="<div class='arow'><div class='ar-i'>";
-      h+="<b style='color:#c9803a'>"+to12(a.hour)+"</b> &#8212; <b>"+a.name+"</b><br>";
-      h+="<small style='color:#555'>&#128241; "+a.tel+"</small>";
-      if(a.service)h+="<br><small>&#9986;&#65039; "+a.service+"</small>";
-      if(a.vehiculo)h+="<br><small>&#128663; "+a.vehiculo+"</small>";
-      if(a.note)h+="<br><small style='color:#888'>&#128172; "+a.note+"</small>";
-      h+="<br><a href='"+wa+"' target='_blank' class='wa-btn'>&#128172; WhatsApp</a>";
-      h+="</div><button class='xb' onclick='delA(\""+a.code+"\",\""+dt+"\")'>&#10005;</button></div>";
-    }
-    h+="</div>";
+    h += "</div>";
   }
-  el.innerHTML=h;
+  el.innerHTML = h;
 }
 
-// WHATSAPP
-function waLink(a,date){
-  var p=date.split("-"),apptD=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
-  var tom=new Date();tom.setDate(tom.getDate()+1);
-  var cuando=(apptD.toDateString()===tom.toDateString())?"manana":"el "+fmtD(date);
-  var msg="Hola "+a.name+"!\n\nTe recordamos que tienes una cita en *Osorio Auto Service* "+cuando+" a las *"+to12(a.hour)+"*";
-  if(a.service)msg+=" para *"+a.service+"*";
-  msg+=".\n\n";
-  if(a.vehiculo)msg+="Vehiculo: "+a.vehiculo+"\n";
-  if(a.note)msg+="Nota: "+a.note+"\n";
-  msg+="\nSi necesitas cancelar usa tu codigo: *"+a.code+"*\n\nGracias!";
-  return "https://wa.me/1"+ph(a.tel)+"?text="+encodeURIComponent(msg);
+// ═══════ WHATSAPP ══════════════════════════════════════════
+function waLink(a, date) {
+  var p = date.split("-"), apptD = new Date(parseInt(p[0]), parseInt(p[1],10)-1, parseInt(p[2],10));
+  var tom = new Date(); tom.setDate(tom.getDate() + 1);
+  var cuando = (apptD.toDateString() === tom.toDateString()) ? "manana" : "el " + fmtD(date);
+  var msg = "Hola " + a.name + "!\n\nTe recordamos tu cita en *Osorio Auto Service* " + cuando + " a las *" + to12(a.hour) + "*";
+  if (a.service) msg += " para *" + a.service + "*";
+  msg += ".\n";
+  if (a.vehiculo) msg += "Auto: " + a.vehiculo + "\n";
+  if (a.note)     msg += "Nota: " + a.note + "\n";
+  msg += "\nCodigo: *" + a.code + "*\nGracias!";
+  return "https://wa.me/1" + ph(a.tel) + "?text=" + encodeURIComponent(msg);
 }
 
-// GRAFICAS
-function renderGraf(){
-  var el=document.getElementById("grafContent");if(!el)return;
-  var allA=[],dates=Object.keys(G.appts);
-  for(var di=0;di<dates.length;di++){var list=G.appts[dates[di]]||[];for(var ai=0;ai<list.length;ai++)allA.push({date:dates[di],a:list[ai]});}
-  if(!allA.length){el.innerHTML="<div style='text-align:center;padding:30px 0;color:#bbb'><div style='font-size:40px'>&#128202;</div><p style='margin-top:10px;font-size:14px'>Aun no hay citas.</p></div>";return;}
-  var hoy=td(),pend=0,hoyC=0;
-  for(var i=0;i<allA.length;i++){if(allA[i].date>=hoy)pend++;if(allA[i].date===hoy)hoyC++;}
-  var svcC={},diaC={},hrC={};
-  for(var i=0;i<DIAS.length;i++)diaC[DIAS[i]]=0;
-  for(var i=0;i<allA.length;i++){
-    var s=allA[i].a.service||"Sin especificar";svcC[s]=(svcC[s]||0)+1;
-    var pp=allA[i].date.split("-"),d2=new Date(parseInt(pp[0]),parseInt(pp[1])-1,parseInt(pp[2])).getDay();diaC[DIAS[d2]]++;
-    var hh=allA[i].a.hour;hrC[hh]=(hrC[hh]||0)+1;
+// ═══════ GRAFICAS ══════════════════════════════════════════
+function renderGraf() {
+  var el = document.getElementById("grafContent"); if (!el) return;
+  var allA = [], dates = Object.keys(D.appts);
+  for (var di = 0; di < dates.length; di++) { var list = D.appts[dates[di]] || []; for (var ai = 0; ai < list.length; ai++) allA.push({date:dates[di], a:list[ai]}); }
+  if (!allA.length) { el.innerHTML = "<div style='text-align:center;padding:30px 0;color:#bbb'><p style='font-size:40px'>&#128202;</p><p style='margin-top:10px;font-size:14px'>Aun no hay citas.</p></div>"; return; }
+  var hoy = td(), pend = 0, hoyC = 0;
+  for (var i = 0; i < allA.length; i++) { if (allA[i].date >= hoy) pend++; if (allA[i].date === hoy) hoyC++; }
+  var svcC = {}, diaC = {}, hrC = {};
+  for (var i = 0; i < DIAS.length; i++) diaC[DIAS[i]] = 0;
+  for (var i = 0; i < allA.length; i++) {
+    var s = allA[i].a.service || "Sin especificar"; svcC[s] = (svcC[s] || 0) + 1;
+    var pp = allA[i].date.split("-"), d2 = new Date(parseInt(pp[0]), parseInt(pp[1],10)-1, parseInt(pp[2],10)).getDay(); diaC[DIAS[d2]]++;
+    hrC[allA[i].a.hour] = (hrC[allA[i].a.hour] || 0) + 1;
   }
-  var topSvc="--",topN=0,sk=Object.keys(svcC);
-  for(var i=0;i<sk.length;i++)if(svcC[sk[i]]>topN){topN=svcC[sk[i]];topSvc=sk[i];}
+  var topSvc = "--", topN = 0, sk = Object.keys(svcC);
+  for (var i = 0; i < sk.length; i++) if (svcC[sk[i]] > topN) { topN = svcC[sk[i]]; topSvc = sk[i]; }
   function bar(l,c,mx){var pct=mx>0?Math.round(c/mx*100):0;return"<div class='bar-row'><div class='bar-lbl'>"+l+"</div><div class='bar-track'><div class='bar-fill' style='width:"+pct+"%'>"+c+"</div></div><div class='bar-val'>"+c+"</div></div>";}
   function chart(obj){var pairs=[],keys=Object.keys(obj);for(var i=0;i<keys.length;i++)if(obj[keys[i]]>0)pairs.push([keys[i],obj[keys[i]]]);pairs.sort(function(a,b){return b[1]-a[1];});if(!pairs.length)return"";var mx=pairs[0][1],h="";for(var i=0;i<pairs.length;i++)h+=bar(pairs[i][0],pairs[i][1],mx);return h;}
-  var h="<div class='stat-grid'><div class='stat-box'><div class='stat-num'>"+allA.length+"</div><div class='stat-lbl'>Total</div></div><div class='stat-box'><div class='stat-num'>"+pend+"</div><div class='stat-lbl'>Pendientes</div></div><div class='stat-box'><div class='stat-num'>"+hoyC+"</div><div class='stat-lbl'>Hoy</div></div><div class='stat-box'><div class='stat-num' style='font-size:12px;padding-top:6px'>"+topSvc+"</div><div class='stat-lbl'>Mas popular</div></div></div>";
-  var sc=chart(svcC);if(sc)h+="<div class='chart-wrap'><h3>Por servicio</h3>"+sc+"</div>";
-  var dc=chart(diaC);if(dc)h+="<div class='chart-wrap'><h3>Por dia</h3>"+dc+"</div>";
-  var hrP=[],hrK=Object.keys(hrC);for(var i=0;i<hrK.length;i++)hrP.push([hrK[i],hrC[hrK[i]]]);hrP.sort(function(a,b){return a[0].localeCompare(b[0]);});
-  if(hrP.length){var hrMx=0;for(var i=0;i<hrP.length;i++)if(hrP[i][1]>hrMx)hrMx=hrP[i][1];var hrH="";for(var i=0;i<hrP.length;i++)hrH+=bar(to12(hrP[i][0]),hrP[i][1],hrMx);h+="<div class='chart-wrap'><h3>Por horario</h3>"+hrH+"</div>";}
-  el.innerHTML=h;
+  var h = "<div class='stat-grid'><div class='stat-box'><div class='stat-num'>" + allA.length + "</div><div class='stat-lbl'>Total</div></div><div class='stat-box'><div class='stat-num'>" + pend + "</div><div class='stat-lbl'>Pendientes</div></div><div class='stat-box'><div class='stat-num'>" + hoyC + "</div><div class='stat-lbl'>Hoy</div></div><div class='stat-box'><div class='stat-num' style='font-size:12px;padding-top:6px'>" + topSvc + "</div><div class='stat-lbl'>Mas popular</div></div></div>";
+  var sc = chart(svcC); if (sc) h += "<div class='chart-wrap'><h3>Por servicio</h3>" + sc + "</div>";
+  var dc = chart(diaC); if (dc) h += "<div class='chart-wrap'><h3>Por dia</h3>" + dc + "</div>";
+  var hrP = [], hrK = Object.keys(hrC); for (var i = 0; i < hrK.length; i++) hrP.push([hrK[i], hrC[hrK[i]]]);
+  hrP.sort(function(a,b){return a[0].localeCompare(b[0]);});
+  if (hrP.length) { var hrMx = 0; for (var i = 0; i < hrP.length; i++) if (hrP[i][1] > hrMx) hrMx = hrP[i][1]; var hrH = ""; for (var i = 0; i < hrP.length; i++) hrH += bar(to12(hrP[i][0]), hrP[i][1], hrMx); h += "<div class='chart-wrap'><h3>Por horario</h3>" + hrH + "</div>"; }
+  el.innerHTML = h;
 }
 
-// FECHAS BLOQUEADAS
-function renderBlkList(){
-  var el=document.getElementById("blkList");if(!el)return;
-  if(!G.blkDates.length){el.innerHTML="<p style='color:#bbb;font-size:13px'>No hay fechas bloqueadas.</p>";return;}
-  var sorted=G.blkDates.slice().sort(function(a,b){return a.d.localeCompare(b.d);});
-  var h="";
-  for(var i=0;i<sorted.length;i++){
-    var ri=G.blkDates.indexOf(sorted[i]);
-    h+="<div class='item'><div class='it'><b>"+fmtD(sorted[i].d)+"</b><br><small style='color:#888'>"+sorted[i].msg+"</small></div><button class='xb' onclick='remBlkD("+ri+")'>&#10005;</button></div>";
+// ═══════ FECHAS ════════════════════════════════════════════
+function renderBlkList() {
+  var el = document.getElementById("blkList"); if (!el) return;
+  if (!D.blkDates.length) { el.innerHTML = "<p style='color:#bbb;font-size:13px'>No hay fechas bloqueadas.</p>"; return; }
+  var sorted = D.blkDates.slice().sort(function(a,b) { return a.d.localeCompare(b.d); });
+  var h = "";
+  for (var i = 0; i < sorted.length; i++) {
+    var ri = D.blkDates.indexOf(sorted[i]);
+    h += "<div class='item'><div class='it'><b>" + fmtD(sorted[i].d) + "</b><br><small style='color:#888'>" + sorted[i].msg + "</small></div><button class='xb' onclick='remBlkD(" + ri + ")'>&#10005;</button></div>";
   }
-  el.innerHTML=h;
+  el.innerHTML = h;
 }
 
-function addBlkDate(){
-  var v=document.getElementById("blkDIn").value,msg=document.getElementById("blkDMsgIn").value.trim();
-  if(!v){alert("Selecciona una fecha");return;}
-  if(!msg){alert("Escribe el mensaje para los clientes");return;}
-  var dup=false;for(var i=0;i<G.blkDates.length;i++)if(G.blkDates[i].d===v){dup=true;break;}
-  if(dup){alert("Esa fecha ya esta bloqueada");return;}
-  G.blkDates.push({d:v,msg:msg});
-  api("action=blkDate&fecha="+encodeURIComponent(v)+"&msg="+encodeURIComponent(msg));
-  document.getElementById("blkDIn").value="";document.getElementById("blkDMsgIn").value="";
-  renderBlkList();renderCal(1);
+function addBlkDate() {
+  var v = document.getElementById("blkDIn").value, msg = document.getElementById("blkDMsgIn").value.trim();
+  if (!v) { alert("Selecciona una fecha"); return; }
+  if (!msg) { alert("Escribe el mensaje para los clientes"); return; }
+  var dup = false; for (var i = 0; i < D.blkDates.length; i++) if (D.blkDates[i].d === v) { dup = true; break; }
+  if (dup) { alert("Esa fecha ya esta bloqueada"); return; }
+  D.blkDates.push({d:v, msg:msg});
+  sendToSheets("action=blkDate&fecha=" + encodeURIComponent(v) + "&msg=" + encodeURIComponent(msg));
+  saveLocal();
+  document.getElementById("blkDIn").value = ""; document.getElementById("blkDMsgIn").value = "";
+  renderBlkList(); renderCal(0); renderCal(1);
   alert("Listo. Los clientes ya no pueden agendar ese dia.");
 }
 
-function addBlkRange(){
-  var s=document.getElementById("rS").value,e=document.getElementById("rE").value,msg=document.getElementById("rMsg").value.trim();
-  if(!s||!e){alert("Selecciona inicio y fin");return;}
-  if(s>e){alert("El inicio debe ser antes que el fin");return;}
-  if(!msg){alert("Escribe el mensaje para los clientes");return;}
-  var cur=new Date(s+"T12:00:00"),end=new Date(e+"T12:00:00"),count=0;
-  while(cur<=end){
-    var f=fk(cur.getFullYear(),cur.getMonth(),cur.getDate());
-    var dup=false;for(var i=0;i<G.blkDates.length;i++)if(G.blkDates[i].d===f){dup=true;break;}
-    if(!dup){G.blkDates.push({d:f,msg:msg});api("action=blkDate&fecha="+encodeURIComponent(f)+"&msg="+encodeURIComponent(msg));count++;}
-    cur.setDate(cur.getDate()+1);
+function addBlkRange() {
+  var s = document.getElementById("rS").value, e = document.getElementById("rE").value, msg = document.getElementById("rMsg").value.trim();
+  if (!s || !e) { alert("Selecciona inicio y fin"); return; }
+  if (s > e) { alert("El inicio debe ser antes que el fin"); return; }
+  if (!msg) { alert("Escribe el mensaje"); return; }
+  var cur = new Date(s + "T12:00:00"), end = new Date(e + "T12:00:00"), count = 0;
+  while (cur <= end) {
+    var f = fk(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    var dup = false; for (var i = 0; i < D.blkDates.length; i++) if (D.blkDates[i].d === f) { dup = true; break; }
+    if (!dup) { D.blkDates.push({d:f, msg:msg}); sendToSheets("action=blkDate&fecha=" + encodeURIComponent(f) + "&msg=" + encodeURIComponent(msg)); count++; }
+    cur.setDate(cur.getDate() + 1);
   }
-  document.getElementById("rS").value="";document.getElementById("rE").value="";document.getElementById("rMsg").value="";
-  renderBlkList();renderCal(1);
-  alert(count+" dias bloqueados.");
+  saveLocal();
+  document.getElementById("rS").value = ""; document.getElementById("rE").value = ""; document.getElementById("rMsg").value = "";
+  renderBlkList(); renderCal(0); renderCal(1);
+  alert(count + " dias bloqueados.");
 }
 
-function remBlkD(i){
-  var d=G.blkDates[i].d;
-  G.blkDates.splice(i,1);
-  api("action=unblkDate&fecha="+encodeURIComponent(d));
-  renderBlkList();renderCal(1);
+function remBlkD(i) {
+  var d = D.blkDates[i].d; D.blkDates.splice(i, 1);
+  sendToSheets("action=unblkDate&fecha=" + encodeURIComponent(d));
+  saveLocal(); renderBlkList(); renderCal(0); renderCal(1);
 }
 
-// SERVICIOS
-function renderSvs(){
-  var el=document.getElementById("svList");if(!el)return;
-  var h="";
-  for(var i=0;i<G.services.length;i++){
-    var sv=G.services[i],nm=typeof sv==="object"?sv.n:sv,dur=typeof sv==="object"?sv.d:60;
-    h+="<div class='item'><div class='it'><b>"+nm+"</b><br><small style='color:#888'>Duracion: <input type='number' value='"+dur+"' min='15' max='480' step='15' onchange='updSvD("+i+",this.value)' style='width:55px;padding:3px 6px;border:1px solid #ccc;border-radius:6px;font-size:12px;color:#111'/> min</small></div><button class='xb' onclick='delSv("+i+")'>&#10005;</button></div>";
+// ═══════ SERVICIOS ═════════════════════════════════════════
+function renderSvs() {
+  var el = document.getElementById("svList"); if (!el) return;
+  var h = "";
+  for (var i = 0; i < D.services.length; i++) {
+    var sv = D.services[i], nm = typeof sv === "object" ? sv.n : sv, dur = typeof sv === "object" ? sv.d : 60;
+    h += "<div class='item'><div class='it'><b>" + nm + "</b><br><small style='color:#888'>Duracion: <input type='number' value='" + dur + "' min='15' max='480' step='15' onchange='updSvD(" + i + ",this.value)' style='width:55px;padding:3px 6px;border:1px solid #ccc;border-radius:6px;font-size:12px;color:#111'/> min</small></div><button class='xb' onclick='delSv(" + i + ")'>&#10005;</button></div>";
   }
-  if(!h)h="<p style='color:#bbb;font-size:13px;margin-top:7px'>Sin servicios.</p>";
-  el.innerHTML=h;
+  if (!h) h = "<p style='color:#bbb;font-size:13px;margin-top:7px'>Sin servicios.</p>";
+  el.innerHTML = h;
 }
-function updSvD(i,val){if(typeof G.services[i]==="object")G.services[i].d=parseInt(val,10)||60;else G.services[i]={n:G.services[i],d:parseInt(val,10)||60};saveCfgKey("services",JSON.stringify(G.services));}
-function addSv(){
-  var v=document.getElementById("newSvN").value.trim(),d=parseInt(document.getElementById("newSvD").value,10)||60;
-  if(!v)return;
-  var ex=false;for(var i=0;i<G.services.length;i++){var n=typeof G.services[i]==="object"?G.services[i].n:G.services[i];if(n===v){ex=true;break;}}
-  if(!ex){G.services.push({n:v,d:d});document.getElementById("newSvN").value="";saveCfgKey("services",JSON.stringify(G.services));renderSvs();}
-}
-function delSv(i){G.services.splice(i,1);saveCfgKey("services",JSON.stringify(G.services));renderSvs();}
 
-// CONFIG
-function saveCfg(){
-  var n=document.getElementById("cfgN").value.trim(),m=document.getElementById("cfgM").value.trim(),a=document.getElementById("cfgAdv").value;
-  if(n){G.name=n;saveCfgKey("name",n);}
-  if(m){G.msg=m;saveCfgKey("msg",m);}
-  G.adv=parseInt(a,10)||0;saveCfgKey("adv",String(G.adv));
-  alert("Cambios guardados.");
+function updSvD(i, val) {
+  if (typeof D.services[i] === "object") D.services[i].d = parseInt(val,10) || 60;
+  else D.services[i] = {n:D.services[i], d:parseInt(val,10)||60};
+  saveLocal(); sendToSheets("action=saveCfg&key=services&val=" + encodeURIComponent(JSON.stringify(D.services)));
 }
-function savePin(){
+
+function addSv() {
+  var v = document.getElementById("newSvN").value.trim(), d = parseInt(document.getElementById("newSvD").value,10) || 60;
+  if (!v) return;
+  var ex = false; for (var i = 0; i < D.services.length; i++) { var n = typeof D.services[i]==="object"?D.services[i].n:D.services[i]; if (n===v){ex=true;break;} }
+  if (!ex) { D.services.push({n:v,d:d}); document.getElementById("newSvN").value = ""; saveLocal(); sendToSheets("action=saveCfg&key=services&val=" + encodeURIComponent(JSON.stringify(D.services))); renderSvs(); buildSvc(); }
+}
+
+function delSv(i) { D.services.splice(i,1); saveLocal(); sendToSheets("action=saveCfg&key=services&val=" + encodeURIComponent(JSON.stringify(D.services))); renderSvs(); buildSvc(); }
+
+// ═══════ CONFIG ════════════════════════════════════════════
+function saveCfg() {
+  var n=document.getElementById("cfgN").value.trim(), m=document.getElementById("cfgM").value.trim(), a=document.getElementById("cfgAdv").value;
+  if(n){D.name=n;sendToSheets("action=saveCfg&key=name&val="+encodeURIComponent(n));}
+  if(m){D.msg=m;sendToSheets("action=saveCfg&key=msg&val="+encodeURIComponent(m));}
+  D.adv=parseInt(a,10)||0; sendToSheets("action=saveCfg&key=adv&val="+encodeURIComponent(String(D.adv)));
+  saveLocal(); alert("Cambios guardados.");
+}
+
+function savePin() {
   var v=document.getElementById("cfgPin").value;
-  if(v.length>=4){G.pin=v;document.getElementById("cfgPin").value="";saveCfgKey("pin",v);alert("PIN actualizado");}
+  if(v.length>=4){D.pin=v;document.getElementById("cfgPin").value="";sendToSheets("action=saveCfg&key=pin&val="+encodeURIComponent(v));saveLocal();alert("PIN actualizado");}
   else alert("Minimo 4 digitos");
 }
 
-// COPIAR LINK
-function cpLink(){
-  var url=window.location.href,btn=document.getElementById("cpBtn");
-  try{navigator.clipboard.writeText(url).then(function(){btn.textContent="&#9989; Copiado!";setTimeout(function(){btn.textContent="&#128203; Copiar link";},2500)});}
-  catch(e){var ta=document.createElement("textarea");ta.value=url;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand("copy");}catch(e2){}document.body.removeChild(ta);btn.textContent="&#9989; Copiado!";setTimeout(function(){btn.textContent="&#128203; Copiar link";},2500);}
+// ═══════ COPIAR LINK ═══════════════════════════════════════
+function cpLink() {
+  var url=window.location.href, btn=document.getElementById("cpBtn");
+  try { navigator.clipboard.writeText(url).then(function(){btn.textContent="Copiado!";setTimeout(function(){btn.textContent="Copiar link";},2500)}); }
+  catch(e) { var ta=document.createElement("textarea");ta.value=url;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand("copy");}catch(e2){}document.body.removeChild(ta);btn.textContent="Copiado!";setTimeout(function(){btn.textContent="Copiar link";},2500); }
 }
 
-// INICIO
+// ═══════ INICIO ════════════════════════════════════════════
+loadLocal();
 initClient();
 </script>
 </body>
