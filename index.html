@@ -313,13 +313,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
         <option value="6">6 horas</option>
       </select>
     </div>
-    <div class="field">
-      <label>Cambiar PIN de administrador</label>
-      <div class="rf" style="margin-top:4px">
-        <input id="cfgPin" type="password" inputmode="numeric" maxlength="6" placeholder="Nuevo PIN" style="text-align:center;letter-spacing:8px;font-size:18px"/>
-        <button class="btn sm" onclick="savePin()">Guardar</button>
-      </div>
-    </div>
     <button class="btn" onclick="saveCfg()">&#128190; Guardar cambios</button>
   </div>
 
@@ -367,7 +360,7 @@ var G = {
   config: {
     name:"Osorio Auto Service",phone:"",addr:"",waLink:"",
     msg:"Su cita ha sido confirmada. Te esperamos puntual.",
-    adv:2,pin:"1234"
+    adv:2
   }
 };
 
@@ -495,7 +488,6 @@ function startListeners(){
     var c=snap.val();if(!c)return;
     if(c.services)try{var sv=JSON.parse(c.services);if(sv&&sv.length)G.services=sv;}catch(e){}
     if(c.adv!==undefined)G.config.adv=parseInt(c.adv,10)||0;
-    if(c.pin)G.config.pin=c.pin;
     if(c.name)G.config.name=c.name;
     if(c.msg)G.config.msg=c.msg;
     if(c.phone!==undefined)G.config.phone=c.phone;
@@ -507,19 +499,28 @@ function startListeners(){
     updateShareLinks();
   });
 
-  // Citas listener — always runs; Firebase rules control access
-  // Admin (auth != null && admin claim) gets full read
-  // Clients only write their own cita, don't read others
-  db.ref("citas").on("value",function(snap){
-    G.appts=snap.val()||{};
-    renderCal(0);renderCal(1);
+}
+
+// ── Admin citas listener — only started after successful auth ──
+var _citasListenerOn = false;
+function startCitasListener(){
+  if(_citasListenerOn) return;
+  _citasListenerOn = true;
+  db.ref("citas").on("value", function(snap){
+    G.appts = snap.val() || {};
+    renderCal(0); renderCal(1);
     checkRemind();
-    if(adminD)updDay();
-  },function(err){
-    // Permission denied — client accessing citas root (expected in secure mode)
-    // Clients don't need to read all citas — only admin does
-    console.log("citas read:", err ? err.code : "ok");
+    if(adminD) updDay();
+  }, function(err){
+    console.error("citas listener error:", err.code);
+    _citasListenerOn = false;
   });
+}
+
+function stopCitasListener(){
+  db.ref("citas").off();
+  _citasListenerOn = false;
+  G.appts = {};
 }
 
 // ═══════════════════════════════════════════════════════
@@ -965,6 +966,7 @@ function doLogin(){
       if(tokenResult.claims.admin === true){
         document.getElementById('adminEmail').value = '';
         document.getElementById('adminPass').value  = '';
+        startCitasListener(); // only load citas when admin is authenticated
         goPage('pgA');
       } else {
         // Signed in but not admin — sign out and show error
@@ -982,6 +984,8 @@ function doLogin(){
 }
 
 function adminSignOut(){
+  stopCitasListener(); // clear citas data from memory on logout
+  adminD = null;
   auth.signOut().then(function(){
     goPage('pgL');
   }).catch(function(e){
@@ -1772,22 +1776,6 @@ function _saveCfg(){
   db.ref("config").update(upd)
     .then(function(){alert("Cambios guardados. Los clientes los ven al instante.");})
     .catch(function(e){alert("Error: "+e.message);});
-}
-
-function savePin(){
-  requireAdmin(function(){ _savePin(); });
-}
-function _savePin(){
-  var val=document.getElementById("cfgPin").value.trim();
-  if(!/^\d{4,6}$/.test(val)){
-    alert("El PIN debe tener entre 4 y 6 digitos numericos.");
-    return;
-  }
-  G.config.pin=val;
-  document.getElementById("cfgPin").value="";
-  db.ref("config/pin").set(val)
-    .then(function(){alert("PIN actualizado correctamente.");})
-    .catch(function(e){alert("Error guardando PIN: "+e.message);});
 }
 
 function cpLink(){
