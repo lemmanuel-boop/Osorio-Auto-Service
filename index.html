@@ -941,13 +941,13 @@ function toggleBlkDay(){
   var activas=Object.values(dayData).filter(function(a){return a.estado!=="cancelada";});
 
   if(G.blkDates[dayKey]){
-    // Desbloquear — limpiar blkDates y blkHours del dia
-    db.ref("blkDates/"+dayKey).remove();
-    db.ref("blkHours/"+dayKey).remove();
+    db.ref("blkDates/"+dayKey).remove()
+      .catch(function(err){alert("Error desbloqueando dia: "+err.message);});
+    db.ref("blkHours/"+dayKey).remove()
+      .catch(function(err){console.error("Error limpiando horas:",err);});
     return;
   }
 
-  // Advertir si hay citas activas
   if(activas.length){
     alert("Este dia tiene "+activas.length+" cita"+(activas.length>1?"s":"")+" activa"+(activas.length>1?"s":"")+". Revisalas antes de bloquearlo.");
     return;
@@ -956,16 +956,20 @@ function toggleBlkDay(){
   var msg=prompt("Mensaje para los clientes (ej: Cerrado por dia festivo):");
   if(!msg||!msg.trim())return;
 
-  // Bloquear — limpiar blkHours para evitar estados mezclados
-  db.ref("blkDates/"+dayKey).set({fecha:adminD,msg:msg.trim()});
-  db.ref("blkHours/"+dayKey).remove();
+  db.ref("blkDates/"+dayKey).set({fecha:adminD,msg:msg.trim()})
+    .then(function(){
+      db.ref("blkHours/"+dayKey).remove()
+        .catch(function(err){console.error("Error limpiando horas:",err);});
+    })
+    .catch(function(err){
+      alert("No se pudo bloquear el dia. Error: "+err.message);
+    });
 }
 
 function toggleBlkH(h){
   if(!adminD)return;
   var dayKey=dk(adminD);
 
-  // Si el dia esta bloqueado completo, no permitir editar horas
   if(G.blkDates[dayKey]){
     alert("Este dia esta bloqueado completo. Desbloquéalo primero si quieres editar horas especificas.");
     return;
@@ -973,9 +977,17 @@ function toggleBlkH(h){
 
   var bh=G.blkHours[dayKey]||{};
   if(bh[hk(h)]){
-    db.ref("blkHours/"+dayKey+"/"+hk(h)).remove();
+    db.ref("blkHours/"+dayKey+"/"+hk(h)).remove()
+      .catch(function(err){
+        console.error("Error quitando hora bloqueada:",err);
+        alert("No se pudo desbloquear la hora. Error: "+err.message);
+      });
   }else{
-    db.ref("blkHours/"+dayKey+"/"+hk(h)).set(h);
+    db.ref("blkHours/"+dayKey+"/"+hk(h)).set(h)
+      .catch(function(err){
+        console.error("Error bloqueando hora:",err);
+        alert("No se pudo bloquear la hora. Error: "+err.message);
+      });
   }
 }
 
@@ -1139,10 +1151,16 @@ function addBlkDate(){
   if(!v){alert("Selecciona una fecha");return;}
   if(!msg){alert("Escribe el mensaje para los clientes");return;}
   if(G.blkDates[dk(v)]){alert("Esa fecha ya esta bloqueada");return;}
-  db.ref("blkDates/"+dk(v)).set({fecha:v,msg:msg});
-  document.getElementById("blkDIn").value="";
-  document.getElementById("blkDMsgIn").value="";
-  alert("Listo. Los clientes ya no pueden agendar ese dia.");
+  db.ref("blkDates/"+dk(v)).set({fecha:v,msg:msg})
+    .then(function(){
+      document.getElementById("blkDIn").value="";
+      document.getElementById("blkDMsgIn").value="";
+      alert("Listo. Los clientes ya no pueden agendar ese dia.");
+    })
+    .catch(function(err){
+      console.error("Error bloqueando fecha:",err);
+      alert("No se pudo bloquear la fecha. Error: "+err.message);
+    });
 }
 
 function addBlkRange(){
@@ -1152,19 +1170,25 @@ function addBlkRange(){
   if(!s||!e){alert("Selecciona inicio y fin");return;}
   if(s>e){alert("El inicio debe ser antes que el fin");return;}
   if(!msg){alert("Escribe el mensaje para los clientes");return;}
-  var cur=new Date(s+"T12:00:00"),end=new Date(e+"T12:00:00"),count=0;
+  var cur=new Date(s+"T12:00:00"),end=new Date(e+"T12:00:00"),count=0,errors=0;
+  var total=Math.round((end-cur)/(1000*60*60*24))+1;
+  var done=0;
   while(cur<=end){
     var f=fk(cur.getFullYear(),cur.getMonth(),cur.getDate());
     if(!G.blkDates[dk(f)]){
-      db.ref("blkDates/"+dk(f)).set({fecha:f,msg:msg});
       count++;
+      db.ref("blkDates/"+dk(f)).set({fecha:f,msg:msg})
+        .catch(function(err){
+          errors++;
+          console.error("Error bloqueando fecha en rango:",err);
+        });
     }
     cur.setDate(cur.getDate()+1);
   }
   document.getElementById("rS").value="";
   document.getElementById("rE").value="";
   document.getElementById("rMsg").value="";
-  alert(count+" dias bloqueados correctamente.");
+  alert(count+" dias bloqueados. Si ves que alguno no se guardo, revisa las reglas de Firebase.");
 }
 
 // ═══════════════════════════════════════════════════════
