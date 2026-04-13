@@ -159,13 +159,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
   <div class="hdr"><div style="font-size:38px">&#128274;</div><h1>Osorio Auto Service</h1><p>Acceso administrador</p></div>
   <div class="card">
     <div class="field">
-      <label>PIN de acceso</label>
-      <input id="pinIn" type="password" inputmode="numeric" maxlength="6" placeholder="&#8226;&#8226;&#8226;&#8226;" class="pin-in"
-        oninput="document.getElementById('pinErr').style.display='none'"
+      <label>Correo electronico</label>
+      <input id="adminEmail" type="email" placeholder="admin@correo.com"
+        oninput="document.getElementById('loginErr').style.display='none'"
         onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
-    <p id="pinErr" style="color:#e74c3c;font-size:12px;margin:4px 0;display:none">PIN incorrecto</p>
-    <button class="btn" onclick="doLogin()">Entrar</button>
+    <div class="field">
+      <label>Contrasena</label>
+      <input id="adminPass" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+        oninput="document.getElementById('loginErr').style.display='none'"
+        onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <p id="loginErr" style="color:#e74c3c;font-size:12px;margin:4px 0;display:none">Correo o contrasena incorrectos</p>
+    <button class="btn" id="loginBtn" onclick="doLogin()">Entrar</button>
     <div style="text-align:center;margin-top:10px"><button class="ghost" onclick="goPage('pgC')">&#8592; Volver</button></div>
   </div>
 </div>
@@ -319,12 +325,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
 
   <div class="lnks">
     <button class="ghost" onclick="goPage('pgC')">&#8592; Ver como cliente</button>
-    <button class="ghost" onclick="goPage('pgL')">Cerrar sesion</button>
+    <button class="ghost" onclick="adminSignOut()">Cerrar sesion</button>
   </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════
 // FIREBASE
@@ -340,6 +347,8 @@ var firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 var db = firebase.database();
+var auth = firebase.auth();
+var adminUser = null; // set when admin logs in
 
 // ═══════════════════════════════════════════════════════
 // ESTADO GLOBAL
@@ -470,12 +479,7 @@ function freeH(date,dur){
 // FIREBASE LISTENERS
 // ═══════════════════════════════════════════════════════
 function startListeners(){
-  db.ref("citas").on("value",function(snap){
-    G.appts=snap.val()||{};
-    renderCal(0);renderCal(1);
-    checkRemind();
-    if(adminD)updDay();
-  });
+  // Public listeners — available to all (clients need these)
   db.ref("blkDates").on("value",function(snap){
     G.blkDates=snap.val()||{};
     renderCal(0);renderCal(1);
@@ -501,6 +505,20 @@ function startListeners(){
     var el2=document.getElementById("cBizAddr");if(el2)el2.textContent=G.config.addr||"";
     buildSvc();
     updateShareLinks();
+  });
+
+  // Citas listener — always runs; Firebase rules control access
+  // Admin (auth != null && admin claim) gets full read
+  // Clients only write their own cita, don't read others
+  db.ref("citas").on("value",function(snap){
+    G.appts=snap.val()||{};
+    renderCal(0);renderCal(1);
+    checkRemind();
+    if(adminD)updDay();
+  },function(err){
+    // Permission denied — client accessing citas root (expected in secure mode)
+    // Clients don't need to read all citas — only admin does
+    console.log("citas read:", err ? err.code : "ok");
   });
 }
 
@@ -913,18 +931,86 @@ function clientCancel(fecha,codigo,btn){
 }
 
 // ═══════════════════════════════════════════════════════
-// LOGIN
+// AUTH — Firebase Authentication
 // ═══════════════════════════════════════════════════════
-function doLogin(){
-  var val=document.getElementById("pinIn").value;
-  if(val===G.config.pin){
-    document.getElementById("pinIn").value="";
-    goPage("pgA");
-  }else{
-    document.getElementById("pinErr").style.display="block";
-    document.getElementById("pinIn").value="";
+
+// Listen for auth state changes
+auth.onAuthStateChanged(function(user) {
+  adminUser = user;
+  // If admin was on pgA and gets signed out, redirect to login
+  var pgA = document.getElementById('pgA');
+  if(!user && pgA && pgA.style.display !== 'none') {
+    goPage('pgL');
   }
+});
+
+function doLogin(){
+  var email = document.getElementById('adminEmail').value.trim();
+  var pass  = document.getElementById('adminPass').value;
+  var btn   = document.getElementById('loginBtn');
+  var err   = document.getElementById('loginErr');
+  if(!email || !pass){
+    err.textContent = 'Ingresa tu correo y contrasena.';
+    err.style.display = 'block';
+    return;
+  }
+  if(btn){btn.disabled=true; btn.textContent='Entrando...';}
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(function(cred){
+      // Check custom claim admin === true
+      return cred.user.getIdTokenResult();
+    })
+    .then(function(tokenResult){
+      if(btn){btn.disabled=false; btn.textContent='Entrar';}
+      if(tokenResult.claims.admin === true){
+        document.getElementById('adminEmail').value = '';
+        document.getElementById('adminPass').value  = '';
+        goPage('pgA');
+      } else {
+        // Signed in but not admin — sign out and show error
+        auth.signOut();
+        err.textContent = 'Esta cuenta no tiene permisos de administrador.';
+        err.style.display = 'block';
+      }
+    })
+    .catch(function(e){
+      if(btn){btn.disabled=false; btn.textContent='Entrar';}
+      err.textContent = 'Correo o contrasena incorrectos.';
+      err.style.display = 'block';
+      console.error('Login error:', e.code, e.message);
+    });
 }
+
+function adminSignOut(){
+  auth.signOut().then(function(){
+    goPage('pgL');
+  }).catch(function(e){
+    console.error('Sign out error:', e);
+    goPage('pgL');
+  });
+}
+
+// Guard: called before any admin write to verify still authenticated
+function requireAdmin(callback){
+  if(!adminUser){
+    alert('Tu sesion expiro. Por favor inicia sesion de nuevo.');
+    goPage('pgL');
+    return;
+  }
+  adminUser.getIdTokenResult(true).then(function(tokenResult){
+    if(tokenResult.claims.admin === true){
+      callback();
+    } else {
+      alert('No tienes permisos de administrador.');
+      auth.signOut();
+      goPage('pgL');
+    }
+  }).catch(function(e){
+    console.error('Token error:', e);
+    goPage('pgL');
+  });
+}
+
 
 // ═══════════════════════════════════════════════════════
 // ADMIN
@@ -1052,12 +1138,18 @@ function buildApptRow(a,showEdit){
 }
 
 function cambiarEstado(fecha,codigo,estado){
-  db.ref("citas/"+dk(fecha)+"/"+codigo+"/estado").set(estado)
-    .then(function(){console.log("Estado actualizado:",estado);})
-    .catch(function(e){alert("No se pudo actualizar el estado: "+e.message);});
+  requireAdmin(function(){
+    db.ref("citas/"+dk(fecha)+"/"+codigo+"/estado").set(estado)
+      .then(function(){console.log("Estado actualizado:",estado);})
+      .catch(function(e){alert("No se pudo actualizar el estado: "+e.message);});
+  });
 }
 
 function toggleBlkDay(){
+  if(!adminD)return;
+  requireAdmin(function(){ _toggleBlkDay(); });
+}
+function _toggleBlkDay(){
   if(!adminD)return;
   var dayKey=dk(adminD);
   var dayData=G.appts[dayKey]||{};
@@ -1081,6 +1173,10 @@ function toggleBlkDay(){
 }
 
 function toggleBlkH(h){
+  if(!adminD)return;
+  requireAdmin(function(){ _toggleBlkH(h); });
+}
+function _toggleBlkH(h){
   if(!adminD)return;
   var dayKey=dk(adminD);
   if(G.blkDates[dayKey]){alert("Este dia esta bloqueado completo. Desbloquéalo primero.");return;}
@@ -1141,6 +1237,9 @@ function cerrarEditCita(){
 }
 
 function guardarEditCita(fecha,codigo){
+  requireAdmin(function(){ _guardarEditCita(fecha,codigo); });
+}
+function _guardarEditCita(fecha,codigo){
   var nFecha=document.getElementById("eFecha").value;
   var nHora=document.getElementById("eHora").value;
   var nSvc=document.getElementById("eSvcE").value;
@@ -1350,6 +1449,9 @@ function renderBlkList(){
 }
 
 function eliminarBloqueoFecha(dkey){
+  requireAdmin(function(){ _eliminarBloqueoFecha(dkey); });
+}
+function _eliminarBloqueoFecha(dkey){
   Promise.all([
     db.ref("blkDates/"+dkey).remove(),
     db.ref("blkHours/"+dkey).remove()
@@ -1357,6 +1459,9 @@ function eliminarBloqueoFecha(dkey){
 }
 
 function addBlkDate(){
+  requireAdmin(function(){ _addBlkDate(); });
+}
+function _addBlkDate(){
   var val=document.getElementById("blkDIn").value;
   var msg=document.getElementById("blkDMsgIn").value.trim();
   if(!val){alert("Selecciona una fecha");return;}
@@ -1376,6 +1481,9 @@ function addBlkDate(){
 }
 
 function addBlkRange(){
+  requireAdmin(function(){ _addBlkRange(); });
+}
+function _addBlkRange(){
   var s=document.getElementById("rS").value;
   var e=document.getElementById("rE").value;
   var msg=document.getElementById("rMsg").value.trim();
@@ -1566,6 +1674,9 @@ function renderSvs(){
 }
 
 function updSvD(i,val){
+  requireAdmin(function(){ _updSvD(i,val); });
+}
+function _updSvD(i,val){
   var s=G.services[i];
   if(typeof s==="object")s.d=parseInt(val,10)||60;
   else G.services[i]={n:s,d:parseInt(val,10)||60,activo:true};
@@ -1575,6 +1686,9 @@ function updSvD(i,val){
 }
 
 function toggleSvActivo(i,val){
+  requireAdmin(function(){ _toggleSvActivo(i,val); });
+}
+function _toggleSvActivo(i,val){
   var s=G.services[i];
   if(typeof s==="object")s.activo=val;
   else G.services[i]={n:s,d:60,activo:val};
@@ -1584,6 +1698,9 @@ function toggleSvActivo(i,val){
 }
 
 function addSv(){
+  requireAdmin(function(){ _addSv(); });
+}
+function _addSv(){
   var nm=document.getElementById("newSvN").value.trim();
   var dur=parseInt(document.getElementById("newSvD").value,10)||60;
   if(!nm){alert("Escribe el nombre del servicio");return;}
@@ -1601,6 +1718,9 @@ function addSv(){
 }
 
 function delSv(i){
+  requireAdmin(function(){ _delSv(i); });
+}
+function _delSv(i){
   var sv=G.services[i];
   var nm=typeof sv==="object"?sv.n:sv;
   var hoy=td(),hasFuture=false;
@@ -1638,6 +1758,9 @@ function loadCfgForm(){
 }
 
 function saveCfg(){
+  requireAdmin(function(){ _saveCfg(); });
+}
+function _saveCfg(){
   var upd={
     name:  document.getElementById("cfgName").value.trim()||G.config.name,
     phone: document.getElementById("cfgPhone").value.trim(),
@@ -1652,6 +1775,9 @@ function saveCfg(){
 }
 
 function savePin(){
+  requireAdmin(function(){ _savePin(); });
+}
+function _savePin(){
   var val=document.getElementById("cfgPin").value.trim();
   if(!/^\d{4,6}$/.test(val)){
     alert("El PIN debe tener entre 4 y 6 digitos numericos.");
