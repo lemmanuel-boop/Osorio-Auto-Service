@@ -1555,23 +1555,69 @@ function guardarEditCita(fecha,codigo){
   var nSvc=document.getElementById("eSvcE").value;
   var nMarca=document.getElementById("eMarcaE").value.trim();
   var nModelo=document.getElementById("eModeloE").value.trim();
-  var nTel=document.getElementById("eTelE").value.trim();
+  var nTel=document.getElementById("eTelE").value.trim().replace(/\D/g,"");
   var nNota=document.getElementById("eNotaE").value.trim();
   var nNotaInt=document.getElementById("eNotaInt").value.trim();
-  if(!nFecha||!nHora){alert("Fecha y hora son obligatorios");return;}
+
+  // ── Validaciones de campos obligatorios ──
+  var errs=[];
+  if(!nFecha)errs.push("Fecha obligatoria");
+  if(!nHora)errs.push("Hora obligatoria");
+  if(!nSvc)errs.push("Servicio obligatorio");
+  if(!nMarca)errs.push("Marca obligatoria");
+  if(!nModelo)errs.push("Modelo obligatorio");
+  if(!nTel||nTel.length<7)errs.push("Telefono invalido (minimo 7 digitos)");
+  if(errs.length){alert("Corrige estos campos:\n"+errs.join("\n"));return;}
+
+  // ── Validar domingo ──
+  if(dow(nFecha)===0){alert("El taller no trabaja los domingos.");return;}
+
+  // ── Validar fecha bloqueada ──
+  if(getBlkInfo(nFecha)){alert("Esa fecha esta bloqueada: "+getBlkInfo(nFecha).msg);return;}
+
+  // ── Validar dentro del horario laboral ──
+  if(!isWorkH(nFecha,nHora)){
+    alert("La hora "+to12(nHora)+" no esta dentro del horario laboral para ese dia.\nLun-Vie: 7AM-3:30PM (almuerzo 11-12) | Sab: 7AM-11:30AM.");
+    return;
+  }
+
+  // ── Validar hora bloqueada ──
+  var bh=G.blkHours[dk(nFecha)]||{};
+  if(bh[hk(nHora)]){alert("Esa hora esta bloqueada manualmente ese dia.");return;}
+
+  // ── Validar conflicto con otras citas ──
+  var dur=getSvcD(nSvc);
+  var dayData=G.appts[dk(nFecha)]||{};
+  var nuevoInicio=nHora;
+  var nuevoFin=addM(nHora,dur);
+  var conflicto=Object.keys(dayData).filter(function(c){
+    if(c===codigo&&nFecha===fecha)return false; // ignorar la misma cita
+    var a=dayData[c];
+    if(!a||a.estado==="cancelada")return false;
+    var aFin=addM(a.hora,getSvcD(a.servicio));
+    return nuevoInicio<aFin&&nuevoFin>a.hora;
+  });
+  if(conflicto.length){
+    var c2=dayData[conflicto[0]];
+    alert("Conflicto con la cita de "+c2.nombre+" a las "+to12(c2.hora)+". Elige otro horario.");
+    return;
+  }
+
   var btn=document.querySelector("#editModal .btn:last-child");
   if(btn){btn.disabled=true;btn.textContent="Guardando...";}
+
   var dayOld=G.appts[dk(fecha)]||{};
   var apptOld=dayOld[codigo];
   if(!apptOld){alert("Cita no encontrada");return;}
+
   var updated=Object.assign({},apptOld,{
     fecha:nFecha, hora:nHora, servicio:nSvc,
     vehiculo:nMarca+" "+nModelo, marca:nMarca, modelo:nModelo,
     telefono:nTel, nota:nNota, notaAdmin:nNotaInt
   });
+
   var isSameDay=(nFecha===fecha);
-  var saveRef=db.ref("citas/"+dk(nFecha)+"/"+codigo);
-  saveRef.set(updated)
+  db.ref("citas/"+dk(nFecha)+"/"+codigo).set(updated)
     .then(function(){
       if(!isSameDay){
         return db.ref("citas/"+dk(fecha)+"/"+codigo).remove();
@@ -1595,53 +1641,93 @@ function buscarHistorial(){
   q=q.trim().toLowerCase();
   var el=document.getElementById("histResult");
   if(!el)return;
-  if(!q){el.innerHTML="<p style='color:#bbb;font-size:13px'>Escribe un nombre o telefono para buscar.</p>";return;}
+  if(!q){el.innerHTML="<p style=\'color:#bbb;font-size:13px\'>Escribe un nombre o telefono para buscar.</p>";return;}
+
   var clientes={};
   Object.keys(G.appts).forEach(function(dkey){
     Object.values(G.appts[dkey]||{}).forEach(function(a){
       var qd=ph(q),td2=ph(a.telefono||"");
-      var match=(qd.length>0&&td2.indexOf(qd)>=0)||
-                (a.nombre&&a.nombre.toLowerCase().indexOf(q)>=0);
+      var match=(qd.length>0&&td2.indexOf(qd)>=0)||(a.nombre&&a.nombre.toLowerCase().indexOf(q)>=0);
       if(match){
         var key=ph(a.telefono||a.nombre||"");
-        if(!clientes[key])clientes[key]={nombre:a.nombre,tel:a.telefono,citas:[]};
+        if(!clientes[key])clientes[key]={nombre:a.nombre,tel:a.telefono,vehiculo:a.vehiculo||"",citas:[]};
         clientes[key].citas.push(a);
       }
     });
   });
+
   var keys=Object.keys(clientes);
-  if(!keys.length){el.innerHTML="<p style='color:#888;font-size:13px;padding:10px;text-align:center'>No encontramos clientes con esa informacion.</p>";return;}
+  if(!keys.length){el.innerHTML="<p style=\'color:#888;font-size:13px;padding:10px;text-align:center\'>No encontramos clientes.</p>";return;}
+
   var h="";
   keys.forEach(function(k){
     var c=clientes[k];
     c.citas.sort(function(a,b){return b.fecha.localeCompare(a.fecha);});
     var total=c.citas.length;
+    var pasadas=c.citas.filter(function(a){return a.fecha<td();}).length;
+    var activas=c.citas.filter(function(a){return a.fecha>=td()&&a.estado!=="cancelada";}).length;
+    var ultimaVisita=c.citas.find(function(a){return a.fecha<td();});
+    var proximaCita=c.citas.find(function(a){return a.fecha>=td()&&a.estado!=="cancelada";});
     var servicios={};
     c.citas.forEach(function(a){if(a.servicio)servicios[a.servicio]=(servicios[a.servicio]||0)+1;});
-    var topSvc=Object.keys(servicios).sort(function(a,b){return servicios[b]-servicios[a];})[0]||"--";
-    h+="<div class='card' style='margin-bottom:10px'>"+
-       "<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px'>"+
-       "<div><b style='font-size:15px'>"+c.nombre+"</b><br>"+
-       "<small style='color:#555'>&#128241; "+c.tel+"</small></div>"+
-       "<div style='text-align:right'><span style='font-size:20px;font-weight:900;color:#c9803a'>"+total+"</span>"+
-       "<br><small style='color:#888'>visita"+(total>1?"s":"")+"</small></div></div>"+
-       "<div style='font-size:12px;color:#555;margin-bottom:8px'>Servicio mas frecuente: <b>"+topSvc+"</b></div>"+
-       "<div style='font-size:11px;font-weight:700;color:#c9803a;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px'>Historial</div>";
+    var svcOrdenados=Object.keys(servicios).sort(function(a,b){return servicios[b]-servicios[a];});
+    var topSvcs=svcOrdenados.slice(0,3).map(function(s){return s+" ("+servicios[s]+")";}).join(", ")||"--";
+    var uvFecha=ultimaVisita?fmtD(ultimaVisita.fecha):"--";
+
+    h+="<div class=\'card\' style=\'margin-bottom:10px\'>";
+    h+="<div style=\'display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px\'>";
+    h+="<div><b style=\'font-size:15px\'>"+c.nombre+"</b><br>";
+    h+="<small style=\'color:#555\'>&#128241; "+c.tel+"</small>";
+    if(c.vehiculo)h+="<br><small style=\'color:#888\'>&#128663; "+c.vehiculo+"</small>";
+    h+="</div>";
+    h+="<div style=\'text-align:right\'><span style=\'font-size:22px;font-weight:900;color:#c9803a\'>"+total+"</span><br>";
+    h+="<small style=\'color:#888\'>visita"+(total>1?"s":"")+"</small></div></div>";
+    h+="<div style=\'display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px\'>";
+    h+="<div style=\'background:#f9f5ef;border-radius:8px;padding:8px;text-align:center\'><div style=\'font-size:16px;font-weight:900;color:#c9803a\'>"+pasadas+"</div><div style=\'font-size:10px;color:#888\'>Pasadas</div></div>";
+    h+="<div style=\'background:#f9f5ef;border-radius:8px;padding:8px;text-align:center\'><div style=\'font-size:16px;font-weight:900;color:#27ae60\'>"+activas+"</div><div style=\'font-size:10px;color:#888\'>Activas</div></div>";
+    h+="<div style=\'background:#f9f5ef;border-radius:8px;padding:8px;text-align:center\'><div style=\'font-size:11px;font-weight:700;color:#c9803a;word-break:break-all\'>"+(ultimaVisita?fmtD(ultimaVisita.fecha).split(" "+ultimaVisita.fecha.split("-")[0])[0]:"--")+"</div><div style=\'font-size:10px;color:#888\'>Ultima visita</div></div>";
+    h+="</div>";
+    h+="<div style=\'font-size:12px;color:#555;margin-bottom:6px\'>&#128295; Servicios frecuentes: <b>"+topSvcs+"</b></div>";
+    if(proximaCita)h+="<div style=\'font-size:12px;color:#27ae60;margin-bottom:8px\'>&#128197; Proxima: <b>"+fmtD(proximaCita.fecha)+" a las "+to12(proximaCita.hora)+"</b></div>";
+    var nmS=c.nombre.replace(/["']/g,"");
+    var telS=c.tel.replace(/["']/g,"");
+    var vehS=c.vehiculo.replace(/["']/g,"");
+    h+="<button class=\'btn tan\' style=\'margin-top:0;margin-bottom:10px;font-size:12px\' onclick=\'nuevaCitaRapida(""+nmS+"",""+telS+"",""+vehS+"")\'>&#128197; Nueva cita con este cliente</button>";
+    h+="<div style=\'font-size:11px;font-weight:700;color:#c9803a;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px\'>Historial</div>";
     c.citas.forEach(function(a){
       var past=a.fecha<td();
-      h+="<div class='hist-row'>"+
-         "<b>"+fmtD(a.fecha)+"</b> &mdash; "+to12(a.hora)+"<br>"+
-         "<small style='color:#555'>"+( a.servicio||"Sin servicio")+"</small>"+
-         (a.vehiculo?"<br><small style='color:#888'>&#128663; "+a.vehiculo+"</small>":"")+
-         (a.nota?"<br><small style='color:#aaa'>"+a.nota+"</small>":"")+
-         "<br><span style='font-size:11px;background:"+(past?"#e2e3e5":"#d4edda")+";color:"+(past?"#383d41":"#155724")+";padding:1px 6px;border-radius:99px;font-weight:700'>"+(past?"Pasada":"Activa")+"</span>"+
-         "</div>";
+      var bg=past?"#e2e3e5":(a.estado==="cancelada"?"#f8d7da":"#d4edda");
+      var txt=past?"Pasada":(a.estado==="cancelada"?"Cancelada":"Activa");
+      h+="<div class=\'hist-row\'>";
+      h+="<b>"+fmtD(a.fecha)+"</b> &mdash; "+to12(a.hora)+"<br>";
+      h+="<small style=\'color:#555\'>"+(a.servicio||"Sin servicio")+"</small>";
+      if(a.vehiculo)h+="<br><small style=\'color:#888\'>&#128663; "+a.vehiculo+"</small>";
+      // NOTA INTERNA: no se muestra aqui — solo en panel admin de citas
+      h+="<br><span style=\'font-size:11px;background:"+bg+";color:#383d41;padding:1px 6px;border-radius:99px;font-weight:700\'>"+txt+"</span>";
+      h+="</div>";
     });
     h+="</div>";
   });
   el.innerHTML=h;
 }
 
+function nuevaCitaRapida(nombre,tel,vehiculo){
+  goPage("pgC");
+  setTimeout(function(){
+    var fNom=document.getElementById("fNom");
+    var fTel=document.getElementById("fTel");
+    if(fNom)fNom.value=nombre;
+    if(fTel){fTel.value=tel;fTel.dataset.raw=tel;}
+    if(vehiculo){
+      var parts=vehiculo.split(" ");
+      var fm=document.getElementById("fMarca");
+      var fo=document.getElementById("fModelo");
+      if(fm)fm.value=parts[0]||"";
+      if(fo)fo.value=parts.slice(1).join(" ")||"";
+    }
+    ck();
+  },300);
+}
 // ═══════════════════════════════════════════
 // ADDBLKRANGE — validate active citas
 // ═══════════════════════════════════════════
