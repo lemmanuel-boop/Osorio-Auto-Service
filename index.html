@@ -117,6 +117,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
 .share-wa{background:#25D366}
 .share-sms{background:#007aff}
 .share-copy{background:#c9803a}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:480px;padding:20px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:800;color:#111;margin-bottom:14px;text-align:center}
+.modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0e8d8;font-size:13px}
+.modal-row:last-child{border:none}
+.modal-lbl{color:#888;font-weight:600}
+.modal-val{color:#111;font-weight:500;text-align:right;max-width:60%}
+.hist-row{background:#f9f5ef;border-radius:9px;padding:10px 12px;margin-bottom:6px;font-size:13px;border:1px solid #e8dece}
+.nota-int{background:#fff9e6;border:1.5px solid #ffd700;border-radius:9px;padding:9px;font-size:12px;color:#7a6000;margin-top:6px}
+.nota-int label{font-weight:700;display:block;margin-bottom:4px}
+.nota-int textarea{width:100%;border:1px solid #ffd700;border-radius:7px;padding:7px;font-size:12px;font-family:inherit;resize:none;height:55px;background:#fffdf0;color:#111;outline:none}
 </style>
 </head>
 <body>
@@ -183,6 +194,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
     <button class="tab"    onclick="stab('tCitas',this)">&#128203; Citas</button>
     <button class="tab"    onclick="stab('tGraf',this)">&#128202; Graficas</button>
     <button class="tab"    onclick="stab('tFechas',this)">&#128198; Fechas</button>
+    <button class="tab"    onclick="stab('tHist',this)">&#128100; Historial</button>
     <button class="tab"    onclick="stab('tServ',this)">&#9986;&#65039; Servicios</button>
     <button class="tab"    onclick="stab('tCfg',this)">&#9881;&#65039; Config</button>
   </div>
@@ -252,6 +264,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;co
     <div class="divl"></div>
     <p style="font-size:13px;font-weight:700;color:#111;margin-bottom:7px">Bloqueos activos</p>
     <div id="blkList"></div>
+  </div>
+
+  <!-- Historial -->
+  <div id="tHist" class="card" style="display:none">
+    <h2>&#128100; Historial de clientes</h2>
+    <p class="note">Busca por nombre o telefono para ver el historial de visitas.</p>
+    <div class="rf" style="margin-bottom:12px">
+      <input id="histQ" placeholder="Nombre o telefono..." oninput="buscarHistorial()"/>
+    </div>
+    <div id="histResult"></div>
   </div>
 
   <!-- Servicios -->
@@ -540,7 +562,7 @@ function buildClientBody(){
     '<input id="fNom" placeholder="Tu nombre completo" oninput="ck()"/>'+
     '<div class="err-msg" id="eNom">El nombre es obligatorio</div></div>'+
     '<div class="field"><label>Telefono <span class="req">*</span></label>'+
-    '<input id="fTel" type="tel" placeholder="787-000-0000" oninput="ck()"/>'+
+    '<input id="fTel" type="tel" placeholder="787-000-0000" oninput="fmtPhone(this);ck()"/>'+
     '<div class="err-msg" id="eTel">El telefono es obligatorio</div></div>'+
     '<div class="field"><label>Servicio <span class="req">*</span></label>'+
     '<select id="fSvc" onchange="onSvcCh()"></select>'+
@@ -553,10 +575,14 @@ function buildClientBody(){
     '<div><label>Modelo <span class="req">*</span></label>'+
     '<input id="fModelo" placeholder="Corolla" oninput="ck()"/>'+
     '<div class="err-msg" id="eModelo">Obligatorio</div></div></div></div>'+
+    '<div class="field"><div class="r2">'+
+    '<div><label>Año (opcional)</label><input id="fAnio" type="number" placeholder="2020" min="1950" max="2030"/></div>'+
+    '<div><label>Tablilla (opcional)</label><input id="fTabla" placeholder="ABC-123"/></div>'+
+    '</div></div>'+
     '<div class="field"><label>Nota adicional <span style="color:#999;font-weight:400">(max 200 caracteres)</span></label>'+
     '<textarea id="fNot" placeholder="Opcional..." maxlength="200" oninput="cntNota(this)"></textarea>'+
     '<div style="text-align:right;font-size:11px;color:#999;margin-top:2px"><span id="notaCnt">0</span>/200</div></div>'+
-    '<button class="btn" id="cfBtn" onclick="book()" disabled>Confirmar cita</button></div>'+
+    '<button class="btn" id="cfBtn" onclick="showConfirm()" disabled>Revisar y confirmar cita</button></div>'+
     '<div class="card">'+
     '<h2>&#128269; Buscar o cancelar mi cita</h2>'+
     '<p class="note">Ingresa tu telefono o codigo de confirmacion.</p>'+
@@ -737,9 +763,14 @@ function book(){
   var btn=document.getElementById("cfBtn");
   if(btn){btn.disabled=true;btn.textContent="Guardando...";}
 
+  var anio=v("fAnio");
+  var tabla=v("fTabla");
+  var vehFull=veh+(anio?" "+anio:"")+(tabla?" | "+tabla:"");
   var appt={
-    nombre:nom, telefono:tel, servicio:svc, vehiculo:veh,
-    marca:marca, modelo:modelo, nota:nota,
+    nombre:nom, telefono:getRawPhone(), servicio:svc,
+    vehiculo:vehFull, marca:marca, modelo:modelo,
+    anio:anio, tablilla:tabla,
+    nota:nota, notaAdmin:"",
     hora:selH, fecha:selD, codigo:code,
     duracion:dur, estado:"pendiente",
     timestamp:Date.now()
@@ -766,6 +797,8 @@ function book(){
           el.appendChild(ln);
         });
       }
+      var cm=document.getElementById("confModal");
+      if(cm)cm.remove();
       document.getElementById("okBox").style.display="block";
       selD=null;selH="";
     })
@@ -866,6 +899,7 @@ function stab(id,btn){
   if(id==="tCitas"){buildFilters();renderAllA();}
   if(id==="tGraf")renderGraf();
   if(id==="tFechas")renderBlkList();
+  if(id==="tHist"){var el=document.getElementById("histResult");if(el)el.innerHTML="<p style='color:#bbb;font-size:13px'>Escribe un nombre o telefono para buscar.</p>";}
   if(id==="tServ")renderSvs();
   if(id==="tCfg")loadCfgForm();
 }
@@ -925,16 +959,21 @@ function updDay(){
       var labels={pendiente:"Pendiente",confirmada:"Confirmada",cancelada:"Cancelar",completada:"Completada",noasistio:"No asistio"};
       h2+="<option value=\'"+est+"\'"+(a.estado===est?" selected":"")+">"+(labels[est]||est)+"</option>";
     });
-    h2+="</select></div></div></div>";
+    h2+="</select>";
+    h2+="<button class=\'btn sm tan\' style=\'margin-top:0;font-size:11px\' onclick=\'editarCita(\""+a.fecha+"\",\""+a.codigo+"\")\'> &#9999;&#65039; Editar</button>";
+    if(a.notaAdmin)h2+="<div style=\'background:#fff9e6;border:1px solid #ffd700;border-radius:7px;padding:6px;margin-top:4px;font-size:11px;color:#7a6000\'>&#128274; "+a.notaAdmin+"</div>";
+    h2+="</div></div></div>";
   });
   document.getElementById("dayAppts").innerHTML=h2;
 }
 
 function cambiarEstado(fecha,codigo,estado){
   db.ref("citas/"+dk(fecha)+"/"+codigo+"/estado").set(estado)
-    .catch(function(err){
-      console.error("Error cambiando estado:",err);
-      alert("No se pudo cambiar el estado. Error: "+err.message);
+    .then(function(){
+      console.log("Estado actualizado:",estado);
+    })
+    .catch(function(e){
+      alert("No se pudo actualizar el estado: "+e.message);
     });
 }
 
@@ -945,10 +984,14 @@ function toggleBlkDay(){
   var activas=Object.values(dayData).filter(function(a){return a.estado!=="cancelada";});
 
   if(G.blkDates[dayKey]){
-    db.ref("blkDates/"+dayKey).remove()
-      .catch(function(err){alert("Error desbloqueando dia: "+err.message);});
-    db.ref("blkHours/"+dayKey).remove()
-      .catch(function(err){console.error("Error limpiando horas:",err);});
+    Promise.all([
+      db.ref("blkDates/"+dayKey).remove(),
+      db.ref("blkHours/"+dayKey).remove()
+    ]).then(function(){
+      console.log("Dia desbloqueado:",dayKey);
+    }).catch(function(err){
+      alert("Error desbloqueando dia: "+err.message);
+    });
     return;
   }
 
@@ -1054,7 +1097,10 @@ function renderAllA(){
       var labels={pendiente:"Pendiente",confirmada:"Confirmada",cancelada:"Cancelar",completada:"Completada",noasistio:"No asistio"};
       h+="<option value='"+est+"'"+(a.estado===est?" selected":"")+">"+(labels[est]||est)+"</option>";
     });
-    h+="</select></div></div></div>";
+    h+="</select>";
+    h+="<button class=\'btn sm tan\' style=\'margin-top:0;font-size:11px\' onclick=\'editarCita(\""+a.fecha+"\",\""+a.codigo+"\")\'> &#9999;&#65039; Editar</button>";
+    if(a.notaAdmin)h+="<div style=\'background:#fff9e6;border:1px solid #ffd700;border-radius:7px;padding:5px;margin-top:3px;font-size:11px;color:#7a6000\'>&#128274; "+a.notaAdmin+"</div>";
+    h+="</div></div></div>";
   });
   if(lastDate)h+="</div>";
   el.innerHTML=h;
@@ -1165,6 +1211,11 @@ function addBlkDate(){
   if(!v){alert("Selecciona una fecha");return;}
   if(!msg){alert("Escribe el mensaje para los clientes");return;}
   if(G.blkDates[dk(v)]){alert("Esa fecha ya esta bloqueada");return;}
+  // Validar citas activas en esa fecha
+  var dayAppts=Object.values(G.appts[dk(v)]||{}).filter(function(a){return a.estado!=="cancelada";});
+  if(dayAppts.length){
+    if(!confirm("Esa fecha tiene "+dayAppts.length+" cita"+(dayAppts.length>1?"s":"")+" activa"+(dayAppts.length>1?"s":"")+". Si la bloqueas los clientes no podran verla disponible. Continuar?"))return;
+  }
   db.ref("blkDates/"+dk(v)).set({fecha:v,msg:msg})
     .then(function(){
       document.getElementById("blkDIn").value="";
@@ -1201,6 +1252,13 @@ function addBlkRange(){
   }
 
   if(!promises.length){alert("Todas esas fechas ya estaban bloqueadas.");return;}
+  // Validar citas activas en el rango
+  var diasConCitas=_checkActivasEnRango(s,e);
+  if(diasConCitas.length){
+    var resumen=diasConCitas.slice(0,3).map(function(d){return fmtD(d.f)+" ("+d.n+" cita"+(d.n>1?"s":"")+")";}).join(", ");
+    if(diasConCitas.length>3)resumen+=" y "+(diasConCitas.length-3)+" mas";
+    if(!confirm("Hay citas activas en: "+resumen+". Si bloqueas esos dias los clientes no podran verlos disponibles. Continuar?"))return;
+  }
 
   var btn=document.querySelector("[onclick='addBlkRange()']");
   if(btn){btn.disabled=true;btn.textContent="Bloqueando...";}
@@ -1352,7 +1410,7 @@ function saveCfg(){
 }
 
 function savePin(){
-  var v=document.getElementById("cfgPin").value;
+  var v=document.getElementById("cfgPin").value.trim();
   if(!/^\d{4,6}$/.test(v)){
     alert("El PIN debe tener entre 4 y 6 digitos numericos.");
     return;
@@ -1377,6 +1435,226 @@ function cpLink(){
     try{document.execCommand("copy");alert("Link copiado!");}catch(e2){}
     document.body.removeChild(ta);
   }
+}
+
+// ═══════════════════════════════════════════
+// FORMATO TELEFONO
+// ═══════════════════════════════════════════
+function fmtPhone(el){
+  var raw=el.value.replace(/\D/g,"").slice(0,10);
+  var fmt="";
+  if(raw.length<=3)fmt=raw;
+  else if(raw.length<=6)fmt="("+raw.slice(0,3)+") "+raw.slice(3);
+  else fmt="("+raw.slice(0,3)+") "+raw.slice(3,6)+"-"+raw.slice(6);
+  el.value=fmt;
+  el.dataset.raw=raw; // guardamos solo digitos
+}
+function getRawPhone(){
+  var el=document.getElementById("fTel");
+  if(!el)return"";
+  return el.dataset.raw||el.value.replace(/\D/g,"");
+}
+
+// ═══════════════════════════════════════════
+// MODAL CONFIRMACION ANTES DE GUARDAR
+// ═══════════════════════════════════════════
+function showConfirm(){
+  var nom=v("fNom"),tel=v("fTel"),svc=v("fSvc"),marca=v("fMarca"),modelo=v("fModelo");
+  var nota=v("fNot"),anio=v("fAnio"),tabla=v("fTabla");
+  var dur=getD();
+  if(!nom||!tel||!svc||!marca||!modelo||!selD||!selH){
+    clearErr();
+    if(!nom)showErr("fNom","eNom");
+    if(!tel)showErr("fTel","eTel");
+    if(!svc)showErr("fSvc","eSvc");
+    if(!marca)showErr("fMarca","eMarca");
+    if(!modelo)showErr("fModelo","eModelo");
+    if(!selD||!selH)alert("Selecciona fecha y hora");
+    return;
+  }
+  var veh=marca+" "+modelo+(anio?" "+anio:"")+(tabla?" | "+tabla:"");
+  var rows=[
+    ["Fecha",fmtD(selD)],
+    ["Hora",to12(selH)+" ("+dur+" min)"],
+    ["Servicio",svc],
+    ["Vehiculo",veh],
+    ["Telefono",tel],
+  ];
+  if(nota)rows.push(["Nota",nota]);
+  var rowsHTML=rows.map(function(r){
+    return "<div class='modal-row'><span class='modal-lbl'>"+r[0]+"</span><span class='modal-val'>"+r[1]+"</span></div>";
+  }).join("");
+  var modalHTML="<div class='modal-ov' id='confModal' onclick='closeConfirm(event)'>"+
+    "<div class='modal'>"+
+    "<h3>&#128203; Confirma tu cita</h3>"+
+    rowsHTML+
+    "<div style='margin-top:14px;display:flex;gap:8px'>"+
+    "<button class='btn tan' style='flex:1;margin-top:0' onclick='closeConfirm()'>Editar</button>"+
+    "<button class='btn' style='flex:1;margin-top:0' onclick='book()'>Confirmar</button>"+
+    "</div></div></div>";
+  var ov=document.createElement("div");
+  ov.innerHTML=modalHTML;
+  document.body.appendChild(ov.firstChild);
+}
+function closeConfirm(e){
+  if(e&&e.target&&e.target.id!=="confModal")return;
+  var m=document.getElementById("confModal");
+  if(m)m.remove();
+}
+
+// ═══════════════════════════════════════════
+// EDITAR CITA (ADMIN)
+// ═══════════════════════════════════════════
+function editarCita(fecha,codigo){
+  var dayAppts=G.appts[dk(fecha)]||{};
+  var a=dayAppts[codigo];
+  if(!a)return;
+  var svcsOpts=G.services.map(function(sv){
+    var nm=typeof sv==="object"?sv.n:sv;
+    return "<option value='"+nm+"'"+(a.servicio===nm?" selected":"")+">"+nm+"</option>";
+  }).join("");
+  var vehParts=(a.vehiculo||"").split(" ");
+  var marcaV=vehParts[0]||"";
+  var modeloV=vehParts.slice(1).join(" ")||"";
+  var horaOpts=ALL_H.map(function(h){
+    return "<option value='"+h+"'"+(a.hora===h?" selected":"")+">"+to12(h)+"</option>";
+  }).join("");
+  var modalHTML="<div class='modal-ov' id='editModal' onclick='cerrarEditCita(event)'>"+
+    "<div class='modal'>"+
+    "<h3>&#9999;&#65039; Editar cita</h3>"+
+    "<div class='field'><label>Fecha</label><input type='date' id='eFecha' value='"+a.fecha+"'/></div>"+
+    "<div class='field'><label>Hora</label><select id='eHora'>"+horaOpts+"</select></div>"+
+    "<div class='field'><label>Servicio</label><select id='eSvcE'><option value=''>--</option>"+svcsOpts+"</select></div>"+
+    "<div class='field'><div class='r2'>"+
+    "<div><label>Marca</label><input id='eMarcaE' value='"+marcaV+"'/></div>"+
+    "<div><label>Modelo</label><input id='eModeloE' value='"+modeloV+"'/></div></div></div>"+
+    "<div class='field'><label>Telefono</label><input id='eTelE' type='tel' value='"+a.telefono+"'/></div>"+
+    "<div class='field'><label>Nota del cliente</label><textarea id='eNotaE' maxlength='200'>"+
+    (a.nota||"")+"</textarea></div>"+
+    "<div class='nota-int'><label>&#128274; Nota interna (solo admin)</label>"+
+    "<textarea id='eNotaInt' maxlength='300' placeholder='Observaciones internas...'>"+
+    (a.notaAdmin||"")+"</textarea></div>"+
+    "<div style='margin-top:14px;display:flex;gap:8px'>"+
+    "<button class='btn tan' style='flex:1;margin-top:0' onclick='cerrarEditCita()'>Cancelar</button>"+
+    "<button class='btn' style='flex:1;margin-top:0' onclick='guardarEditCita(""+fecha+"",""+codigo+"")'>Guardar</button>"+
+    "</div></div></div>";
+  var ov=document.createElement("div");
+  ov.innerHTML=modalHTML;
+  document.body.appendChild(ov.firstChild);
+}
+
+function cerrarEditCita(e){
+  if(e&&e.target&&e.target.id!=="editModal")return;
+  var m=document.getElementById("editModal");
+  if(m)m.remove();
+}
+
+function guardarEditCita(fecha,codigo){
+  var nFecha=document.getElementById("eFecha").value;
+  var nHora=document.getElementById("eHora").value;
+  var nSvc=document.getElementById("eSvcE").value;
+  var nMarca=document.getElementById("eMarcaE").value.trim();
+  var nModelo=document.getElementById("eModeloE").value.trim();
+  var nTel=document.getElementById("eTelE").value.trim();
+  var nNota=document.getElementById("eNotaE").value.trim();
+  var nNotaInt=document.getElementById("eNotaInt").value.trim();
+  if(!nFecha||!nHora){alert("Fecha y hora son obligatorios");return;}
+  var btn=document.querySelector("#editModal .btn:last-child");
+  if(btn){btn.disabled=true;btn.textContent="Guardando...";}
+  var dayOld=G.appts[dk(fecha)]||{};
+  var apptOld=dayOld[codigo];
+  if(!apptOld){alert("Cita no encontrada");return;}
+  var updated=Object.assign({},apptOld,{
+    fecha:nFecha, hora:nHora, servicio:nSvc,
+    vehiculo:nMarca+" "+nModelo, marca:nMarca, modelo:nModelo,
+    telefono:nTel, nota:nNota, notaAdmin:nNotaInt
+  });
+  var isSameDay=(nFecha===fecha);
+  var saveRef=db.ref("citas/"+dk(nFecha)+"/"+codigo);
+  saveRef.set(updated)
+    .then(function(){
+      if(!isSameDay){
+        return db.ref("citas/"+dk(fecha)+"/"+codigo).remove();
+      }
+    })
+    .then(function(){
+      cerrarEditCita();
+    })
+    .catch(function(e){
+      if(btn){btn.disabled=false;btn.textContent="Guardar";}
+      alert("Error al guardar: "+e.message);
+    });
+}
+
+// ═══════════════════════════════════════════
+// HISTORIAL DE CLIENTES
+// ═══════════════════════════════════════════
+function buscarHistorial(){
+  var q=(document.getElementById("histQ")||{}).value;
+  if(!q)q="";
+  q=q.trim().toLowerCase();
+  var el=document.getElementById("histResult");
+  if(!el)return;
+  if(!q){el.innerHTML="<p style='color:#bbb;font-size:13px'>Escribe un nombre o telefono para buscar.</p>";return;}
+  var clientes={};
+  Object.keys(G.appts).forEach(function(dkey){
+    Object.values(G.appts[dkey]||{}).forEach(function(a){
+      var qd=ph(q),td2=ph(a.telefono||"");
+      var match=(qd.length>0&&td2.indexOf(qd)>=0)||
+                (a.nombre&&a.nombre.toLowerCase().indexOf(q)>=0);
+      if(match){
+        var key=ph(a.telefono||a.nombre||"");
+        if(!clientes[key])clientes[key]={nombre:a.nombre,tel:a.telefono,citas:[]};
+        clientes[key].citas.push(a);
+      }
+    });
+  });
+  var keys=Object.keys(clientes);
+  if(!keys.length){el.innerHTML="<p style='color:#888;font-size:13px;padding:10px;text-align:center'>No encontramos clientes con esa informacion.</p>";return;}
+  var h="";
+  keys.forEach(function(k){
+    var c=clientes[k];
+    c.citas.sort(function(a,b){return b.fecha.localeCompare(a.fecha);});
+    var total=c.citas.length;
+    var servicios={};
+    c.citas.forEach(function(a){if(a.servicio)servicios[a.servicio]=(servicios[a.servicio]||0)+1;});
+    var topSvc=Object.keys(servicios).sort(function(a,b){return servicios[b]-servicios[a];})[0]||"--";
+    h+="<div class='card' style='margin-bottom:10px'>"+
+       "<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px'>"+
+       "<div><b style='font-size:15px'>"+c.nombre+"</b><br>"+
+       "<small style='color:#555'>&#128241; "+c.tel+"</small></div>"+
+       "<div style='text-align:right'><span style='font-size:20px;font-weight:900;color:#c9803a'>"+total+"</span>"+
+       "<br><small style='color:#888'>visita"+(total>1?"s":"")+"</small></div></div>"+
+       "<div style='font-size:12px;color:#555;margin-bottom:8px'>Servicio mas frecuente: <b>"+topSvc+"</b></div>"+
+       "<div style='font-size:11px;font-weight:700;color:#c9803a;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px'>Historial</div>";
+    c.citas.forEach(function(a){
+      var past=a.fecha<td();
+      h+="<div class='hist-row'>"+
+         "<b>"+fmtD(a.fecha)+"</b> &mdash; "+to12(a.hora)+"<br>"+
+         "<small style='color:#555'>"+( a.servicio||"Sin servicio")+"</small>"+
+         (a.vehiculo?"<br><small style='color:#888'>&#128663; "+a.vehiculo+"</small>":"")+
+         (a.nota?"<br><small style='color:#aaa'>"+a.nota+"</small>":"")+
+         "<br><span style='font-size:11px;background:"+(past?"#e2e3e5":"#d4edda")+";color:"+(past?"#383d41":"#155724")+";padding:1px 6px;border-radius:99px;font-weight:700'>"+(past?"Pasada":"Activa")+"</span>"+
+         "</div>";
+    });
+    h+="</div>";
+  });
+  el.innerHTML=h;
+}
+
+// ═══════════════════════════════════════════
+// ADDBLKRANGE — validate active citas
+// ═══════════════════════════════════════════
+function _checkActivasEnRango(s,e){
+  var cur=new Date(s+"T12:00:00"),endD=new Date(e+"T12:00:00");
+  var daysWithCitas=[];
+  while(cur<=endD){
+    var f=fk(cur.getFullYear(),cur.getMonth(),cur.getDate());
+    var act=Object.values(G.appts[dk(f)]||{}).filter(function(a){return a.estado!=="cancelada";});
+    if(act.length)daysWithCitas.push({f:f,n:act.length});
+    cur.setDate(cur.getDate()+1);
+  }
+  return daysWithCitas;
 }
 
 // INICIO
