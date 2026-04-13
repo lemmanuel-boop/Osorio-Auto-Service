@@ -878,13 +878,13 @@ function updDay(){
   if(!adminD){dp.style.display="none";return;}
   dp.style.display="block";
   document.getElementById("dayLbl").textContent=fmtD(adminD)+" ("+DIAS[dow(adminD)]+")";
+
   var isDirect=!!(G.blkDates[dk(adminD)]);
   var bi=getBlkInfo(adminD);
   var btn=document.getElementById("blkDayBtn");
-  if(btn)btn.textContent=isDirect?"&#9989; Desbloquear dia":"&#128683; Bloquear dia";
+  if(btn)btn.textContent=isDirect?"\u2705 Desbloquear dia":"\u{1F6AB} Bloquear dia";
   document.getElementById("dayBlkMsg").style.display=bi?"block":"none";
 
-  // Horas
   var bh=G.blkHours[dk(adminD)]||{};
   var hh="";
   ALL_H.forEach(function(t){
@@ -892,40 +892,40 @@ function updDay(){
     var isBlkd=!!(bh[hk(t)]);
     var cls,lbl,oc;
     if(isSched){
-      cls="hb sched";lbl="&#9940; "+to12(t);oc="";
+      cls="hb sched";lbl="\u26D4 "+to12(t);oc="";
+    }else if(isDirect){
+      // Dia completo bloqueado — mostrar como bloqueado, sin interaccion
+      cls="hb blk";lbl="\u{1F6AB} "+to12(t);oc="";
     }else if(isBlkd){
-      cls="hb blk";lbl="&#128683; "+to12(t);oc="onclick='toggleBlkH(\""+t+"\")'";
+      cls="hb blk";lbl="\u{1F6AB} "+to12(t);oc="onclick=\'toggleBlkH(\""+t+"\")\'";
     }else{
-      cls="hb";lbl=to12(t);oc="onclick='toggleBlkH(\""+t+"\")'";
+      cls="hb";lbl=to12(t);oc="onclick=\'toggleBlkH(\""+t+"\")\'";
     }
-    hh+="<button class='"+cls+"' "+oc+" style='font-size:11px'>"+lbl+"</button>";
+    hh+="<button class=\'"+cls+"\' "+oc+" style=\'font-size:11px\'>"+lbl+"</button>";
   });
   document.getElementById("blkHrs").innerHTML=hh;
 
-  // Citas del dia
   var dayData=G.appts[dk(adminD)]||{};
   var list=Object.values(dayData).filter(function(a){return a.estado!=="cancelada";});
   list.sort(function(a,b){return a.hora.localeCompare(b.hora);});
-  var h2=list.length?"":"<p style='color:#bbb;font-size:13px'>Sin citas este dia.</p>";
+  var h2=list.length?"":"<p style=\'color:#bbb;font-size:13px\'>Sin citas este dia.</p>";
   list.forEach(function(a){
     var wa=waLink(a);
-    h2+="<div class='arow'><div class='arow-top'><div class='ar-i'>";
-    h2+="<b style='color:#c9803a'>"+to12(a.hora)+"</b> &#8212; <b>"+a.nombre+"</b> "+badgeHTML(a.estado)+"<br>";
-    h2+="<small style='color:#555'>&#128241; "+a.telefono+"</small>";
+    h2+="<div class=\'arow\'><div class=\'arow-top\'><div class=\'ar-i\'>";
+    h2+="<b style=\'color:#c9803a\'>"+to12(a.hora)+"</b> &#8212; <b>"+a.nombre+"</b> "+badgeHTML(a.estado)+"<br>";
+    h2+="<small style=\'color:#555\'>&#128241; "+a.telefono+"</small>";
     if(a.servicio)h2+="<br><small>&#9986;&#65039; "+a.servicio+"</small>";
     if(a.vehiculo)h2+="<br><small>&#128663; "+a.vehiculo+"</small>";
-    if(a.nota)h2+="<br><small style='color:#888'>&#128172; "+a.nota+"</small>";
-    h2+="<br><a href='"+wa+"' target='_blank' class='wa-btn'>&#128172; WhatsApp</a>";
+    if(a.nota)h2+="<br><small style=\'color:#888\'>&#128172; "+a.nota+"</small>";
+    h2+="<br><a href=\'"+wa+"\' target=\'_blank\' class=\'wa-btn\'>&#128172; WhatsApp</a>";
     h2+="</div>";
-    h2+="<div style='display:flex;flex-direction:column;gap:5px;flex-shrink:0'>";
-    // Cambiar estado
-    h2+="<select onchange='cambiarEstado(\""+a.fecha+"\",\""+a.codigo+"\",this.value)' style='padding:5px;border:1px solid #ddd;border-radius:7px;font-size:11px;font-family:inherit;background:#fff'>";
+    h2+="<div style=\'display:flex;flex-direction:column;gap:5px;flex-shrink:0\'>";
+    h2+="<select onchange=\'cambiarEstado(\""+a.fecha+"\",\""+a.codigo+"\",this.value)\' style=\'padding:5px;border:1px solid #ddd;border-radius:7px;font-size:11px;font-family:inherit;background:#fff\'>";
     ESTADOS.forEach(function(est){
       var labels={pendiente:"Pendiente",confirmada:"Confirmada",cancelada:"Cancelar",completada:"Completada",noasistio:"No asistio"};
-      h2+="<option value='"+est+"'"+(a.estado===est?" selected":"")+">"+(labels[est]||est)+"</option>";
+      h2+="<option value=\'"+est+"\'"+(a.estado===est?" selected":"")+">"+(labels[est]||est)+"</option>";
     });
-    h2+="</select>";
-    h2+="</div></div></div>";
+    h2+="</select></div></div></div>";
   });
   document.getElementById("dayAppts").innerHTML=h2;
 }
@@ -936,22 +936,46 @@ function cambiarEstado(fecha,codigo,estado){
 
 function toggleBlkDay(){
   if(!adminD)return;
-  if(G.blkDates[dk(adminD)]){
-    db.ref("blkDates/"+dk(adminD)).remove();
-  }else{
-    var msg=prompt("Mensaje para los clientes (ej: Cerrado por dia festivo):");
-    if(!msg)return;
-    db.ref("blkDates/"+dk(adminD)).set({fecha:adminD,msg:msg});
+  var dayKey=dk(adminD);
+  var dayData=G.appts[dayKey]||{};
+  var activas=Object.values(dayData).filter(function(a){return a.estado!=="cancelada";});
+
+  if(G.blkDates[dayKey]){
+    // Desbloquear — limpiar blkDates y blkHours del dia
+    db.ref("blkDates/"+dayKey).remove();
+    db.ref("blkHours/"+dayKey).remove();
+    return;
   }
+
+  // Advertir si hay citas activas
+  if(activas.length){
+    alert("Este dia tiene "+activas.length+" cita"+(activas.length>1?"s":"")+" activa"+(activas.length>1?"s":"")+". Revisalas antes de bloquearlo.");
+    return;
+  }
+
+  var msg=prompt("Mensaje para los clientes (ej: Cerrado por dia festivo):");
+  if(!msg||!msg.trim())return;
+
+  // Bloquear — limpiar blkHours para evitar estados mezclados
+  db.ref("blkDates/"+dayKey).set({fecha:adminD,msg:msg.trim()});
+  db.ref("blkHours/"+dayKey).remove();
 }
 
 function toggleBlkH(h){
   if(!adminD)return;
-  var bh=G.blkHours[dk(adminD)]||{};
+  var dayKey=dk(adminD);
+
+  // Si el dia esta bloqueado completo, no permitir editar horas
+  if(G.blkDates[dayKey]){
+    alert("Este dia esta bloqueado completo. Desbloquéalo primero si quieres editar horas especificas.");
+    return;
+  }
+
+  var bh=G.blkHours[dayKey]||{};
   if(bh[hk(h)]){
-    db.ref("blkHours/"+dk(adminD)+"/"+hk(h)).remove();
+    db.ref("blkHours/"+dayKey+"/"+hk(h)).remove();
   }else{
-    db.ref("blkHours/"+dk(adminD)+"/"+hk(h)).set(h);
+    db.ref("blkHours/"+dayKey+"/"+hk(h)).set(h);
   }
 }
 
