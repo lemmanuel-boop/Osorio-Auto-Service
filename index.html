@@ -931,7 +931,11 @@ function updDay(){
 }
 
 function cambiarEstado(fecha,codigo,estado){
-  db.ref("citas/"+dk(fecha)+"/"+codigo+"/estado").set(estado);
+  db.ref("citas/"+dk(fecha)+"/"+codigo+"/estado").set(estado)
+    .catch(function(err){
+      console.error("Error cambiando estado:",err);
+      alert("No se pudo cambiar el estado. Error: "+err.message);
+    });
 }
 
 function toggleBlkDay(){
@@ -1140,9 +1144,19 @@ function renderBlkList(){
   keys.forEach(function(dkey){
     var b=G.blkDates[dkey];
     h+="<div class='item'><div class='it'><b>"+fmtD(b.fecha)+"</b><br><small style='color:#888'>"+b.msg+"</small></div>"+
-       "<button class='xb' onclick='db.ref(\"blkDates/"+dkey+"\").remove()'>&#10005;</button></div>";
+       "<button class='xb' onclick='eliminarBloqueoFecha(""+dkey+"")'>&#10005;</button></div>";
   });
   el.innerHTML=h;
+}
+
+function eliminarBloqueoFecha(dkey){
+  var p1=db.ref("blkDates/"+dkey).remove()
+    .catch(function(err){alert("Error eliminando bloqueo: "+err.message);});
+  var p2=db.ref("blkHours/"+dkey).remove()
+    .catch(function(err){console.error("Error limpiando horas:",err);});
+  Promise.all([p1,p2]).then(function(){
+    console.log("Bloqueo eliminado:",dkey);
+  });
 }
 
 function addBlkDate(){
@@ -1170,30 +1184,64 @@ function addBlkRange(){
   if(!s||!e){alert("Selecciona inicio y fin");return;}
   if(s>e){alert("El inicio debe ser antes que el fin");return;}
   if(!msg){alert("Escribe el mensaje para los clientes");return;}
-  var cur=new Date(s+"T12:00:00"),end=new Date(e+"T12:00:00"),count=0,errors=0;
-  var total=Math.round((end-cur)/(1000*60*60*24))+1;
-  var done=0;
-  while(cur<=end){
+
+  var promises=[];
+  var cur=new Date(s+"T12:00:00"),endD=new Date(e+"T12:00:00");
+
+  while(cur<=endD){
     var f=fk(cur.getFullYear(),cur.getMonth(),cur.getDate());
     if(!G.blkDates[dk(f)]){
-      count++;
-      db.ref("blkDates/"+dk(f)).set({fecha:f,msg:msg})
-        .catch(function(err){
-          errors++;
-          console.error("Error bloqueando fecha en rango:",err);
-        });
+      promises.push(
+        db.ref("blkDates/"+dk(f)).set({fecha:f,msg:msg})
+          .then(function(){return {ok:true};})
+          .catch(function(err){return {ok:false,err:err.message};})
+      );
     }
     cur.setDate(cur.getDate()+1);
   }
-  document.getElementById("rS").value="";
-  document.getElementById("rE").value="";
-  document.getElementById("rMsg").value="";
-  alert(count+" dias bloqueados. Si ves que alguno no se guardo, revisa las reglas de Firebase.");
+
+  if(!promises.length){alert("Todas esas fechas ya estaban bloqueadas.");return;}
+
+  var btn=document.querySelector("[onclick='addBlkRange()']");
+  if(btn){btn.disabled=true;btn.textContent="Bloqueando...";}
+
+  Promise.all(promises).then(function(results){
+    var ok=results.filter(function(r){return r.ok;}).length;
+    var fail=results.filter(function(r){return !r.ok;}).length;
+    document.getElementById("rS").value="";
+    document.getElementById("rE").value="";
+    document.getElementById("rMsg").value="";
+    if(btn){btn.disabled=false;btn.textContent="\u{1F6AB} Bloquear rango";}
+    if(fail===0){
+      alert(ok+" dias bloqueados correctamente.");
+    }else{
+      alert(ok+" dias bloqueados. "+fail+" fallaron — revisa las reglas de Firebase.");
+    }
+  });
+}
+function renderBlkList(){
+  var el=document.getElementById("blkList");if(!el)return;
+  var keys=Object.keys(G.blkDates).sort();
+  if(!keys.length){el.innerHTML="<p style='color:#bbb;font-size:13px'>No hay fechas bloqueadas.</p>";return;}
+  var h="";
+  keys.forEach(function(dkey){
+    var b=G.blkDates[dkey];
+    h+="<div class='item'><div class='it'><b>"+fmtD(b.fecha)+"</b><br><small style='color:#888'>"+b.msg+"</small></div>"+
+       "<button class='xb' onclick='eliminarBloqueoFecha(""+dkey+"")'>&#10005;</button></div>";
+  });
+  el.innerHTML=h;
 }
 
-// ═══════════════════════════════════════════════════════
-// SERVICIOS
-// ═══════════════════════════════════════════════════════
+function eliminarBloqueoFecha(dkey){
+  var p1=db.ref("blkDates/"+dkey).remove()
+    .catch(function(err){alert("Error eliminando bloqueo: "+err.message);});
+  var p2=db.ref("blkHours/"+dkey).remove()
+    .catch(function(err){console.error("Error limpiando horas:",err);});
+  Promise.all([p1,p2]).then(function(){
+    console.log("Bloqueo eliminado:",dkey);
+  });
+}
+
 function renderSvs(){
   var el=document.getElementById("svList");if(!el)return;
   var h="";
@@ -1205,7 +1253,8 @@ function renderSvs(){
        "<b style='color:"+(activo?"#111":"#bbb")+"'>"+nm+"</b>"+
        "<br><small style='color:#888'>Duracion: <input type='number' value='"+dur+"' min='15' max='480' step='15' "+
        "onchange='updSvD("+i+",this.value)' style='width:55px;padding:3px 6px;border:1px solid #ccc;border-radius:6px;font-size:12px;color:#111'/> min</small>"+
-       "<br><small><label style='cursor:pointer;font-weight:400'><input type='checkbox' "+(activo?"checked":"")+" onchange='toggleSvActivo("+i+",this.checked)' style='margin-right:4px'/>"+(activo?"Activo":"Inactivo")+"</label></small>"+
+       "<br><small><label style='cursor:pointer;font-weight:400'><input type='checkbox' "+(activo?"checked":"")+" onchange='toggleSvActivo("+i+",this.checked)' style='margin-right:4px'/>"+
+       (activo?"Activo":"Inactivo")+"</label></small>"+
        "</div>"+
        "<button class='xb' onclick='delSv("+i+")'>&#10005;</button></div>";
   });
@@ -1217,7 +1266,11 @@ function updSvD(i,val){
   var s=G.services[i];
   if(typeof s==="object")s.d=parseInt(val,10)||60;
   else G.services[i]={n:s,d:parseInt(val,10)||60,activo:true};
-  db.ref("config/services").set(JSON.stringify(G.services));
+  db.ref("config/services").set(JSON.stringify(G.services))
+    .catch(function(err){
+      console.error("Error guardando duracion:",err);
+      alert("No se pudo guardar. Error: "+err.message);
+    });
   buildSvc();
 }
 
@@ -1225,7 +1278,11 @@ function toggleSvActivo(i,val){
   var s=G.services[i];
   if(typeof s==="object")s.activo=val;
   else G.services[i]={n:s,d:60,activo:val};
-  db.ref("config/services").set(JSON.stringify(G.services));
+  db.ref("config/services").set(JSON.stringify(G.services))
+    .catch(function(err){
+      console.error("Error actualizando servicio:",err);
+      alert("No se pudo actualizar. Error: "+err.message);
+    });
   buildSvc();renderSvs();
 }
 
@@ -1237,14 +1294,18 @@ function addSv(){
   if(ex){alert("Ya existe un servicio con ese nombre");return;}
   G.services.push({n:nm,d:dur,activo:true});
   document.getElementById("newSvN").value="";
-  db.ref("config/services").set(JSON.stringify(G.services));
-  renderSvs();buildSvc();
+  db.ref("config/services").set(JSON.stringify(G.services))
+    .then(function(){renderSvs();buildSvc();})
+    .catch(function(err){
+      G.services.pop();
+      document.getElementById("newSvN").value=nm;
+      alert("No se pudo agregar el servicio. Error: "+err.message);
+    });
 }
 
 function delSv(i){
   var sv=G.services[i];
   var nm=typeof sv==="object"?sv.n:sv;
-  // Verificar si hay citas futuras con ese servicio
   var hoy=td(),hasFuture=false;
   Object.keys(G.appts).forEach(function(dkey){
     var f=dkey.replace(/_/g,"-");
@@ -1258,14 +1319,15 @@ function delSv(i){
   }else{
     if(!confirm("Eliminar el servicio "+nm+"?"))return;
   }
-  G.services.splice(i,1);
-  db.ref("config/services").set(JSON.stringify(G.services));
-  renderSvs();buildSvc();
+  var backup=G.services.splice(i,1)[0];
+  db.ref("config/services").set(JSON.stringify(G.services))
+    .then(function(){renderSvs();buildSvc();})
+    .catch(function(err){
+      G.services.splice(i,0,backup);
+      alert("No se pudo eliminar el servicio. Error: "+err.message);
+    });
 }
 
-// ═══════════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════════
 function loadCfgForm(){
   document.getElementById("cfgName").value=G.config.name||"";
   document.getElementById("cfgPhone").value=G.config.phone||"";
@@ -1291,20 +1353,17 @@ function saveCfg(){
 
 function savePin(){
   var v=document.getElementById("cfgPin").value;
-  if(v.length>=4){
-    G.config.pin=v;
-    document.getElementById("cfgPin").value="";
-    db.ref("config/pin").set(v)
-      .then(function(){alert("PIN actualizado correctamente.");})
-      .catch(function(e){alert("Error: "+e.message);});
-  }else{
-    alert("El PIN debe tener al menos 4 digitos.");
+  if(!/^\d{4,6}$/.test(v)){
+    alert("El PIN debe tener entre 4 y 6 digitos numericos.");
+    return;
   }
+  G.config.pin=v;
+  document.getElementById("cfgPin").value="";
+  db.ref("config/pin").set(v)
+    .then(function(){alert("PIN actualizado correctamente.");})
+    .catch(function(e){alert("Error guardando PIN: "+e.message);});
 }
 
-// ═══════════════════════════════════════════════════════
-// COPIAR LINK
-// ═══════════════════════════════════════════════════════
 function cpLink(){
   var url=window.location.href;
   try{
@@ -1320,9 +1379,7 @@ function cpLink(){
   }
 }
 
-// ═══════════════════════════════════════════════════════
 // INICIO
-// ═══════════════════════════════════════════════════════
 startListeners();
 initClient();
 </script>
