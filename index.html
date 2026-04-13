@@ -521,6 +521,17 @@ function stopCitasListener(){
   db.ref("citas").off();
   _citasListenerOn = false;
   G.appts = {};
+  // Refresh UI so no stale citas data remains visible after logout
+  adminD = null;
+  var dp = document.getElementById("dayPanel");
+  if(dp) dp.style.display = "none";
+  var aa = document.getElementById("allAppts");
+  if(aa) aa.innerHTML = "<div class='loading'>Toca Actualizar.</div>";
+  var gc = document.getElementById("grafContent");
+  if(gc) gc.innerHTML = "";
+  var hr = document.getElementById("histResult");
+  if(hr) hr.innerHTML = "<p style='color:#bbb;font-size:13px'>Escribe un nombre o telefono para buscar.</p>";
+  renderCal(1);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -805,7 +816,7 @@ function book(){
   var nota=v("fNot"),anio=v("fAnio"),tabla=v("fTabla");
   var valid=true;
   if(!nom){showErr("fNom","eNom");valid=false;}
-  if(!tel){showErr("fTel","eTel");valid=false;}
+  if(!tel||tel.length<10){showErr("fTel","eTel");valid=false;}
   if(!svc){showErr("fSvc","eSvc");valid=false;}
   if(!marca){showErr("fMarca","eMarca");valid=false;}
   if(!modelo){showErr("fModelo","eModelo");valid=false;}
@@ -821,7 +832,8 @@ function book(){
   var appt={
     nombre:nom,telefono:tel,servicio:svc,vehiculo:veh,
     marca:marca,modelo:modelo,anio:anio,tablilla:tabla,
-    nota:nota,notaAdmin:"",
+    nota:nota,
+    // notaAdmin is intentionally excluded — only admin can set this field
     hora:selH,fecha:selD,codigo:code,
     duracion:dur,estado:"pendiente",
     timestamp:Date.now()
@@ -920,7 +932,20 @@ function srch(){
 function clientCancel(fecha,codigo,btn){
   if(!confirm("Seguro que quieres cancelar esta cita?"))return;
   btn.disabled=true;btn.textContent="Cancelando...";
-  db.ref("citas/"+dk(fecha)+"/"+codigo+"/estado").set("cancelada")
+
+  // The Firebase rule requires writing the FULL cita object with estado="cancelada"
+  // (not just the /estado field) so all fields stay unchanged and rule validation passes
+  var appt = (G.appts[dk(fecha)]||{})[codigo];
+  if(!appt){
+    btn.disabled=false;btn.textContent="Cancelar";
+    alert("No se encontro la cita. Recarga la pagina e intenta de nuevo.");
+    return;
+  }
+
+  // Build the updated object — only estado changes, everything else stays identical
+  var updated = Object.assign({}, appt, { estado: "cancelada" });
+
+  db.ref("citas/"+dk(fecha)+"/"+codigo).set(updated)
     .then(function(){
       document.getElementById("srchRes").innerHTML=
         "<div style='background:#f0fff4;border:1.5px solid #74c69d;border-radius:10px;padding:14px;text-align:center'>"+
@@ -928,7 +953,10 @@ function clientCancel(fecha,codigo,btn){
         "<p style='color:#2d6a4f;font-weight:700;margin-top:5px'>Cita cancelada exitosamente.</p></div>";
       document.getElementById("srchIn").value="";
     })
-    .catch(function(e){btn.disabled=false;btn.textContent="Cancelar";alert("Error: "+e.message);});
+    .catch(function(e){
+      btn.disabled=false;btn.textContent="Cancelar";
+      alert("Error al cancelar: "+e.message);
+    });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1259,7 +1287,7 @@ function _guardarEditCita(fecha,codigo){
   if(!nSvc)errs.push("Servicio obligatorio");
   if(!nMarca)errs.push("Marca obligatoria");
   if(!nModelo)errs.push("Modelo obligatorio");
-  if(!nTel||nTel.length<7)errs.push("Telefono invalido (minimo 7 digitos)");
+  if(!nTel||nTel.length<10)errs.push("Telefono invalido (minimo 10 digitos)");
   if(errs.length){alert("Corrige estos campos:\n"+errs.join("\n"));return;}
   if(dow(nFecha)===0){alert("El taller no trabaja los domingos.");return;}
   if(getBlkInfo(nFecha)){alert("Esa fecha esta bloqueada: "+getBlkInfo(nFecha).msg);return;}
