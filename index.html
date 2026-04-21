@@ -995,7 +995,14 @@ function doLogin(){
         if(tokenResult.claims.admin === true){
           document.getElementById('adminEmail').value = '';
           document.getElementById('adminPass').value  = '';
-          startCitasListener();
+          // Disconnect and reconnect DB so the connection picks up the new token
+          db.goOffline();
+          setTimeout(function(){
+            db.goOnline();
+            setTimeout(function(){
+              startCitasListener();
+            }, 500);
+          }, 500);
           goPage('pgA');
         } else {
           auth.signOut();
