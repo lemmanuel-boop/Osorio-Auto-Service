@@ -506,15 +506,36 @@ var _citasListenerOn = false;
 function startCitasListener(){
   if(_citasListenerOn) return;
   _citasListenerOn = true;
-  db.ref("citas").on("value", function(snap){
-    G.appts = snap.val() || {};
-    renderCal(0); renderCal(1);
-    checkRemind();
-    if(adminD) updDay();
-  }, function(err){
-    console.error("citas listener error:", err.code);
-    _citasListenerOn = false;
-  });
+
+  // Use once() first to verify access before setting up persistent listener
+  db.ref("citas").once("value")
+    .then(function(snap){
+      G.appts = snap.val() || {};
+      renderCal(0); renderCal(1);
+      checkRemind();
+      if(adminD) updDay();
+      // Now set up persistent listener
+      db.ref("citas").on("value", function(snap2){
+        G.appts = snap2.val() || {};
+        renderCal(0); renderCal(1);
+        checkRemind();
+        if(adminD) updDay();
+      }, function(err){
+        console.error("citas listener error:", err.code);
+        _citasListenerOn = false;
+      });
+    })
+    .catch(function(err){
+      console.error("citas once error:", err.code);
+      _citasListenerOn = false;
+      // Retry once after token refresh
+      if(adminUser){
+        adminUser.getIdToken(true).then(function(){
+          _citasListenerOn = false;
+          setTimeout(startCitasListener, 1000);
+        });
+      }
+    });
 }
 
 function stopCitasListener(){
@@ -987,29 +1008,23 @@ function doLogin(){
   auth.signInWithEmailAndPassword(email, pass)
     .then(function(cred){
       var user = cred.user;
-      // Force token refresh first, then check claim
-      return user.getIdToken(true).then(function(){
-        return user.getIdTokenResult();
-      }).then(function(tokenResult){
-        if(btn){btn.disabled=false; btn.textContent='Entrar';}
-        if(tokenResult.claims.admin === true){
-          document.getElementById('adminEmail').value = '';
-          document.getElementById('adminPass').value  = '';
-          // Disconnect and reconnect DB so the connection picks up the new token
-          db.goOffline();
-          setTimeout(function(){
-            db.goOnline();
-            setTimeout(function(){
-              startCitasListener();
-            }, 500);
-          }, 500);
-          goPage('pgA');
-        } else {
-          auth.signOut();
-          err.textContent = 'Esta cuenta no tiene permisos de administrador.';
-          err.style.display = 'block';
-        }
-      });
+      return user.getIdTokenResult(true);
+    })
+    .then(function(tokenResult){
+      if(btn){btn.disabled=false; btn.textContent='Entrar';}
+      if(tokenResult.claims.admin === true){
+        document.getElementById('adminEmail').value = '';
+        document.getElementById('adminPass').value  = '';
+        goPage('pgA');
+        // Start citas listener after a delay to ensure token propagates to DB
+        setTimeout(function(){
+          startCitasListener();
+        }, 2000);
+      } else {
+        auth.signOut();
+        err.textContent = 'Esta cuenta no tiene permisos de administrador.';
+        err.style.display = 'block';
+      }
     })
     .catch(function(e){
       if(btn){btn.disabled=false; btn.textContent='Entrar';}
