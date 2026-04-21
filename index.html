@@ -994,8 +994,14 @@ function doLogin(){
       if(tokenResult.claims.admin === true){
         document.getElementById('adminEmail').value = '';
         document.getElementById('adminPass').value  = '';
-        startCitasListener(); // only load citas when admin is authenticated
-        goPage('pgA');
+        // Force token refresh so DB connection has the admin claim before listener starts
+        cred.user.getIdToken(true).then(function(){
+          startCitasListener();
+          goPage('pgA');
+        }).catch(function(){
+          startCitasListener();
+          goPage('pgA');
+        });
       } else {
         // Signed in but not admin — sign out and show error
         auth.signOut();
