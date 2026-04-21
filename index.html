@@ -458,8 +458,9 @@ function getBlkInfo(f){return G.blkDates[dk(f)]||null;}
 function freeH(date,dur){
   var dateSlots = G.slots[dk(date)] || null;
 
-  // If slots data is available (client view), use it
-  if(dateSlots && !adminUser){
+  // If slots data is available and we are in client view, use it
+  var enPaginaCliente = document.getElementById("pgC").style.display !== "none";
+  if(dateSlots && enPaginaCliente){
     return ALL_H.filter(function(h){
       if(!hourOk(date,h)) return false;
       var slot = dateSlots[hk(h)];
