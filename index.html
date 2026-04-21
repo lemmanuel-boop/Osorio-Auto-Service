@@ -986,28 +986,23 @@ function doLogin(){
   if(btn){btn.disabled=true; btn.textContent='Entrando...';}
   auth.signInWithEmailAndPassword(email, pass)
     .then(function(cred){
-      // Check custom claim admin === true
-      return cred.user.getIdTokenResult();
-    })
-    .then(function(tokenResult){
-      if(btn){btn.disabled=false; btn.textContent='Entrar';}
-      if(tokenResult.claims.admin === true){
-        document.getElementById('adminEmail').value = '';
-        document.getElementById('adminPass').value  = '';
-        // Force token refresh so DB connection has the admin claim before listener starts
-        cred.user.getIdToken(true).then(function(){
+      var user = cred.user;
+      // Force token refresh first, then check claim
+      return user.getIdToken(true).then(function(){
+        return user.getIdTokenResult();
+      }).then(function(tokenResult){
+        if(btn){btn.disabled=false; btn.textContent='Entrar';}
+        if(tokenResult.claims.admin === true){
+          document.getElementById('adminEmail').value = '';
+          document.getElementById('adminPass').value  = '';
           startCitasListener();
           goPage('pgA');
-        }).catch(function(){
-          startCitasListener();
-          goPage('pgA');
-        });
-      } else {
-        // Signed in but not admin — sign out and show error
-        auth.signOut();
-        err.textContent = 'Esta cuenta no tiene permisos de administrador.';
-        err.style.display = 'block';
-      }
+        } else {
+          auth.signOut();
+          err.textContent = 'Esta cuenta no tiene permisos de administrador.';
+          err.style.display = 'block';
+        }
+      });
     })
     .catch(function(e){
       if(btn){btn.disabled=false; btn.textContent='Entrar';}
