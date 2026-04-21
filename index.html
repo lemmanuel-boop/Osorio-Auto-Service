@@ -348,6 +348,7 @@ var adminUser = null; // set when admin logs in
 // ═══════════════════════════════════════════════════════
 var G = {
   appts:    {},
+  slots:    {},
   blkDates: {},
   blkHours: {},
   services: [
@@ -455,6 +456,28 @@ function hourOk(date,hour){
 }
 function getBlkInfo(f){return G.blkDates[dk(f)]||null;}
 function freeH(date,dur){
+  var dateSlots = G.slots[dk(date)] || null;
+
+  // If slots data is available (client view), use it
+  if(dateSlots && !adminUser){
+    return ALL_H.filter(function(h){
+      if(!hourOk(date,h)) return false;
+      var slot = dateSlots[hk(h)];
+      if(slot === "bloqueado" || slot === "ocupado") return false;
+      // Also check that dur fits — check all slots in the duration window
+      var dur2 = dur || 60;
+      var se = addM(h, dur2);
+      var cur = h;
+      while(cur < se){
+        var cs = dateSlots[hk(cur)];
+        if(cs === "bloqueado" || cs === "ocupado") return false;
+        cur = addM(cur, 30);
+      }
+      return true;
+    });
+  }
+
+  // Admin view — use full appts data
   var ranges=[];
   var day=G.appts[dk(date)]||{};
   Object.values(day).forEach(function(a){
@@ -466,6 +489,56 @@ function freeH(date,dur){
     for(var i=0;i<ranges.length;i++)if(h<ranges[i].e&&se>ranges[i].s)return false;
     return true;
   });
+}
+
+// ═══════════════════════════════════════════════════════
+// SLOTS — disponibilidad publica (sin datos personales)
+// ═══════════════════════════════════════════════════════
+
+// Recalculate and write slots for a given date
+function syncSlots(fecha){
+  var fkey = dk(fecha);
+  var dayAppts = G.appts[fkey] || {};
+  var blkH = G.blkHours[fkey] || {};
+  var isDayBlocked = !!(G.blkDates[fkey]);
+  var slots = {};
+
+  ALL_H.forEach(function(h){
+    if(!isWorkH(fecha, h)){
+      // Outside working hours — don't write, just skip
+      return;
+    }
+    if(isDayBlocked){
+      slots[hk(h)] = "bloqueado";
+      return;
+    }
+    if(blkH[hk(h)]){
+      slots[hk(h)] = "bloqueado";
+      return;
+    }
+    // Check if occupied by any active cita
+    var ocupado = false;
+    Object.values(dayAppts).forEach(function(a){
+      if(a.estado === "cancelada") return;
+      var aFin = addM(a.hora, getSvcD(a.servicio));
+      if(h >= a.hora && h < aFin) ocupado = true;
+    });
+    slots[hk(h)] = ocupado ? "ocupado" : "libre";
+  });
+
+  // Write to slots node
+  db.ref("slots/" + fkey).set(slots)
+    .catch(function(err){ console.error("syncSlots error:", fecha, err.code); });
+}
+
+// Sync slots for a range of dates around today
+function syncSlotsRange(){
+  var d = new Date();
+  for(var i = -7; i < 60; i++){
+    var dd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i);
+    var f = fk(dd.getFullYear(), dd.getMonth(), dd.getDate());
+    if(dow(f) !== 0) syncSlots(f); // skip sundays
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -499,6 +572,12 @@ function startListeners(){
     updateShareLinks();
   });
 
+  // Slots listener — public availability, readable by all clients
+  db.ref("slots").on("value", function(snap){
+    G.slots = snap.val() || {};
+    if(selD) updC();
+  });
+
 }
 
 // ── Admin citas listener — only started after successful auth ──
@@ -506,36 +585,17 @@ var _citasListenerOn = false;
 function startCitasListener(){
   if(_citasListenerOn) return;
   _citasListenerOn = true;
-
-  // Use once() first to verify access before setting up persistent listener
-  db.ref("citas").once("value")
-    .then(function(snap){
-      G.appts = snap.val() || {};
-      renderCal(0); renderCal(1);
-      checkRemind();
-      if(adminD) updDay();
-      // Now set up persistent listener
-      db.ref("citas").on("value", function(snap2){
-        G.appts = snap2.val() || {};
-        renderCal(0); renderCal(1);
-        checkRemind();
-        if(adminD) updDay();
-      }, function(err){
-        console.error("citas listener error:", err.code);
-        _citasListenerOn = false;
-      });
-    })
-    .catch(function(err){
-      console.error("citas once error:", err.code);
-      _citasListenerOn = false;
-      // Retry once after token refresh
-      if(adminUser){
-        adminUser.getIdToken(true).then(function(){
-          _citasListenerOn = false;
-          setTimeout(startCitasListener, 1000);
-        });
-      }
-    });
+  db.ref("citas").on("value", function(snap){
+    G.appts = snap.val() || {};
+    renderCal(0); renderCal(1);
+    checkRemind();
+    if(adminD) updDay();
+    // Keep slots in sync whenever admin loads citas
+    syncSlotsRange();
+  }, function(err){
+    console.error("citas listener error:", err.code);
+    _citasListenerOn = false;
+  });
 }
 
 function stopCitasListener(){
@@ -861,6 +921,8 @@ function book(){
   };
   db.ref("citas/"+dk(selD)+"/"+code).set(appt)
     .then(function(){
+      // Update public slots so availability is immediately accurate
+      if(typeof syncSlots === "function") syncSlots(selD);
       closeConfirm();
       var lines=[G.config.msg,"",
         "Fecha: "+fmtD(selD),
@@ -968,6 +1030,7 @@ function clientCancel(fecha,codigo,btn){
 
   db.ref("citas/"+dk(fecha)+"/"+codigo).set(updated)
     .then(function(){
+      if(typeof syncSlots === "function") syncSlots(fecha);
       document.getElementById("srchRes").innerHTML=
         "<div style='background:#f0fff4;border:1.5px solid #74c69d;border-radius:10px;padding:14px;text-align:center'>"+
         "<div style='font-size:28px'>&#9989;</div>"+
@@ -1195,7 +1258,10 @@ function buildApptRow(a,showEdit){
 function cambiarEstado(fecha,codigo,estado){
   requireAdmin(function(){
     db.ref("citas/"+dk(fecha)+"/"+codigo+"/estado").set(estado)
-      .then(function(){console.log("Estado actualizado:",estado);})
+      .then(function(){
+        console.log("Estado actualizado:",estado);
+        syncSlots(fecha);
+      })
       .catch(function(e){alert("No se pudo actualizar el estado: "+e.message);});
   });
 }
@@ -1238,9 +1304,11 @@ function _toggleBlkH(h){
   var bh=G.blkHours[dayKey]||{};
   if(bh[hk(h)]){
     db.ref("blkHours/"+dayKey+"/"+hk(h)).remove()
+      .then(function(){ syncSlots(adminD); })
       .catch(function(err){alert("Error: "+err.message);});
   }else{
     db.ref("blkHours/"+dayKey+"/"+hk(h)).set(h)
+      .then(function(){ syncSlots(adminD); })
       .catch(function(err){alert("Error: "+err.message);});
   }
 }
@@ -1345,7 +1413,11 @@ function _guardarEditCita(fecha,codigo){
     .then(function(){
       if(!isSameDay)return db.ref("citas/"+dk(fecha)+"/"+codigo).remove();
     })
-    .then(function(){cerrarEditCita();})
+    .then(function(){
+      syncSlots(nFecha);
+      if(!isSameDay) syncSlots(fecha);
+      cerrarEditCita();
+    })
     .catch(function(e){
       if(saveBtn){saveBtn.disabled=false;saveBtn.textContent="Guardar";}
       alert("Error al guardar: "+e.message);
